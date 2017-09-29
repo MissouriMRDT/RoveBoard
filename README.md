@@ -1,2 +1,3 @@
-# RoveBoard
-Hardware Abstraction Layer, IDE universal (except for energia which has its own repo)
+# RoveBoard! (for all places that aren't energia)
+
+More details inside roveboard folder
