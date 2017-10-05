@@ -4,8 +4,8 @@
 Programmers: Drue Satterfield, David Strickland
 
 Used for controlling motor controllers/drivers and easily manipulating joints. 
-The basics are: there's three modules that work together to control the joints; a joint manager class to oversee the other two and general operation, an algorithm class to control any special controls features, and an output class to control the hardware layer at the bottom. The user interacts with the joint interface for main joint manipulation and management, while individual classes can be called to modify settings of operation specfically associated with them.
-Those three abstract classes set up the general framework, and what each classes' general respondibilities are. The specific classes derive from the abstracts, and implement carrying out those responsibilities.
+The basics are: there's four modules that work together to control the joints; a joint manager class to oversee the other two and general operation, an algorithm class to control any special controls features, an output class to control the hardware layer at the bottom, and a FeedbackDevice class that represents sensors, generally for giving information to the algorithm class. The user interacts with the joint interface for main joint manipulation and management, while individual classes can be called to modify settings of operation specfically associated with them.
+Those four abstract classes set up the general framework, and what each classes' general respondibilities are. The specific classes derive from the abstracts, and implement carrying out those responsibilities.
 Each module is expected to take a specific, standarized kind of input/output data; because the types are standardized, different modules can work with each other without having to know specifically what said module is doing, trusting that they'll be able to handle their own responsibilities independently. 
 There's an input/output type for speed data, for position data, for power data, etc. Which type each module expects just depends on what the actual implementation is.
 [More Details Here](https://github.com/MST-MRDT/ArmBoardSoftware/wiki/Joint-control-framework-overview)
@@ -15,25 +15,35 @@ The `AbstractFramework.h` and `AbstractFramework.cpp` files holds the top level 
 
 ## Dependencies
 * RoveBoard
-* [RoveDynamixel](https://github.com/MST-MRDT/RoveWare)
+* [RoveDynamixel](https://github.com/MST-MRDT/RoveWare) If you want to actually control dynamixels; otherwise, that module is usually commented out due to being untested and proven to be buggy.
 
 ## Usage
 * 0) Include `RoveJointControl.h`. Then, include the derivative classes you want to use.
 * 1) Construct the `OutputDevice` representing the device (motor controller, h-bridge, etc) used to move the joint.
-* 2) If the joint is closed-loop controlled, then also construct a `FeedbackDevice` representing the device on the joint and the `IOAlgorithm` representing the desired closed-loop algorithm.
-* 3) Finally, construct the `JointInterface` that represents this joint by passing in the `OutputDevice`, the `FeedbackDevice`, and the `IOAlgorithm`. The constructor will also require what kind of values the `JointInterface` should expect, such as positional values or speed values. This is so that the interface knows how to properly interpret commands.
+* 2) If the joint is closed-loop controlled, then also construct a `FeedbackDevice` representing the device on the joint and the `IOAlgorithm` representing the desired closed-loop algorithm. Otherwise if it uses any other kind of algorithm to interpret commands for the motor, construct the `IOAlgorithm` without a feedback device. Using no `IOAlgorithm` is also an option, if the `OutputDevice` can understand the commands on its own.
+** Note that if you want to use more complicated control schemes, you can weave multiple `IOAlgorithm`'s together; `IOAlgorithm` supports lacing multiple algorithms in order so that multiple are ran in sequence whenever the joint is updated. More details in its module description below
+* 3) Finally, construct the `JointInterface` that represents this joint by passing in the `OutputDevice` and the `IOAlgorithm`. The constructor will also require what kind of values the `JointInterface` should expect, such as positional values or speed values. This is so that the interface knows how to properly interpret commands.
 * 4) The user should now be able to control the joint using the `JointInterface` object.
 
 ## Modules
 ### Joint Interfaces
 Interface for controlling the overall joint from the main program's perspective. It handles all duties of controlling the joint.
 * `SingleMotorJoint` Joint controlled by a singular motor device
-* `RotateJoint` Differential joint rotational motion. Two motors move in opposite directions to control the joint. Should use the couple function with a tilt joint before using if both used
-* `TiltJoint` Differential joint tilt motion. Two motors move in the same direction to control the joint. Should use the couple function with a rotate joint before using if both used
+* `DifferentialJoint` Mechanical differential joint (two motors attached, with both motors technically controlling two degrees of freedom at once; making them move together causes the joint to move up/down so to speak, making them move in opposite causes the joint to spin in place). Typically, two instances are used together to represent the two degrees of motion the mechanical joint can do, with the user explicitely tying them together in software using the 'setDifferentialMode' function.
 
-### Algorithms
-Algorithms convert the input from base station to whatever is needed to interpret the command, in closed-loop-control fashion.
-* `PIAlgorithm` Closed loop algorithm, using PI logic. Logic is generalized, PI constants are accepted through constructors. To be used when position is recieved from the base station and the speed is to be sent to the device, which in turn, returns feedback of the device's current location. Note that this algorithm needs to be looped externally until `JointInterface` returns am `OutputComplete` status, as each call only executes the PI loop once instead of waiting until completion.
+### IOConverters
+Algorithms that convert the input from base station to whatever is needed for the output device interpret the command.
+This in turn is broken down into two sub-abstract classes.
+
+**IMPORTANT:**  Note that these algorithms typically need to be periodically called, with the timing done externally, until `JointInterface` returns an `OutputComplete` status, as each call only executes the control loop once instead of waiting until completion.
+
+#### Driving Algorithm
+IOConverters that are meant to be the driving force behind a joint, and are capable of moving it without the need of any other algorithm to support it. Only driving algorithms can be directly used by the joint interfae.
+
+* `PIAlgorithm` Closed loop algorithm, using PI logic. Logic is generalized, PI constants are accepted through constructors. To be used when position is received from the base station and the speed is to be sent to the device, which in turn, returns feedback of the device's current location.
+
+#### Supporting algorithms
+IOConverters that are meant to support other algorithms, likely compensating for something during movement rather than being the driving force behind the movement itself. Supporting algorithms are passed to the driving algorithms that a joint is using, and multiple can be chained to each other.
 
 ### Output Devices
 Controls the devices which move the arm, such as motor controllers, using the hardware specifics of the devices, such as what GPIO pins.
@@ -49,18 +59,16 @@ primary class used historically so the one with the most development. For more d
 Feedback devices are used to help determine where the arm is and what steps need to be taken. Used by the `IOAlgorithm` class to perform looping.
 * `Ma3Encoder12b` MA3 magnetic encoder, 12 bit pwm version. Communicates via PWM, 12-bit resolution of degrees over 360 degrees.
 
-##Examples
-* Examples can be found in the test programs under the test folder
+## Examples
+* Examples can be found in the ArmBoardSoftware repo, where RoveJointControl was created.
 
 ## Extension
 In order to implement new modules into the framework:
 * 1) Inherit from the proper abstract class.
 * 2) Define a constructor.
    * ...If it's a device class then it should take in whatever parameters it needs to output properly such as hardware pins.
-   * ...If it's a closed-loop algorithm class, then the constructor should take in any parameters used to configure the algorithm as well as internally set the input and output types. For closed-loop algorithm classes, the constructor should be public since the user will need to construct them personally.
+   * ...If it's a closed-loop algorithm class, then the constructor should take in any parameters used to configure the algorithm as well as internally set the input and output types. For closed-loop algorithm classes, the constructor should be public since the user will need to construct them personally. As well, it should take in any FeedbackDevices it needs.
    * ...In the constructor, make sure to define what the module's expected input type is (and or output type if it wants both, check the abstract classes to see what has what).
 * 3) Document the module in this README.
-* 4) Make sure to test the module and see that it compiles properly; there are lots of minor tests programs included in this repo
-for example
-* 5) Remember, operation-wide functions should be implemented in the joint interface modules, while specific operation setting functions can be handled
-by the other classes.
+* 4) Make sure to test the module and see that it compiles properly
+* 5) Remember, operation-wide functions should be implemented in the joint interface modules, while specific operation settings can be handled by the other classes.

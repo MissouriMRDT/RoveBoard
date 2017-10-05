@@ -14,12 +14,12 @@
 
 #include "generics/Clocking.h"
 #include "generics/DigitalPin.h"
-#include "generics/PwmReader.h"
-#include "generics/PwmWriter.h"
 #include "generics/RoveEthernet.h"
 #include "generics/RoveI2C.h"
+#include "generics/RovePwmRead.h"
+#include "generics/RovePwmWrite.h"
+#include "generics/RoveTimer.h"
 #include "generics/RoveUart.h"
-#include "generics/TimerInterface.h"
 #include "utilities/RoveUtilities.h"
 
 

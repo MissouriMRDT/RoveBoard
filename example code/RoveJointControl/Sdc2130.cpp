@@ -1,19 +1,16 @@
 #include "Sdc2130.h"
 #include "RoveBoard.h"
 
-Sdc2130::Sdc2130(const int pwmPin, ValueType inType, bool upsideDown): OutputDevice()
-{
-	PWM_PIN = pwmPin;
-	inType = inType;
-	invert = upsideDown;
-	controlType = Pwm;
-	pwmVal = 0;
-	currentPower = 0;
-}
+static const int PWM_MIN = 0, PWM_MAX = 255;
+static const int POS_INC = 2;
+
+Sdc2130::Sdc2130(const int pwmGen, const int pwmPin, ValueType inType, bool upsideDown)
+  : OutputDevice(inType, upsideDown), controlType(Pwm), pwmVal(0), currentPower(0), PwmHandle(setupPwmWrite(pwmGen, pwmPin))
+{}
 
 void Sdc2130::move(const long movement)
 {
-	if(inType == InputPower)
+	if(inType == InputPowerPercent)
 	{
 		moveSpeed(movement);
 	}
@@ -57,7 +54,7 @@ void Sdc2130::moveSpeed(const int movement)
         pwmVal = PWM_MAX;
       }
 
-      pwmWrite(PWM_PIN, pwmVal);
+      pwmWriteDuty(PwmHandle, pwmVal);
 
     }
 
@@ -82,9 +79,9 @@ void Sdc2130::setPower(bool powerOn)
 
 long Sdc2130::getCurrentMove()
 {
-  if(inType == InputPower)
+  if(inType == InputPowerPercent)
   {
-    if(invert) //if we're inverted, then we technically move negatively even if we're moving in the 'positive' direction. The direction is the important part
+    if(invert)
     {
       return(currentPower * -1); 
     }

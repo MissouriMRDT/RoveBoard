@@ -1,15 +1,11 @@
 #include "VNH5019.h"
 #include "RoveBoard.h"
 
-VNH5019::VNH5019(const int PwmPin, const int InaPin, const int InbPin, bool upsideDown)
+static const int PWM_MIN = 0, PWM_MAX = 255;
+
+VNH5019::VNH5019(const int PwmGen, const int PwmPin, const int InaPin, const int InbPin, bool upsideDown)
+  : OutputDevice(InputPowerPercent, upsideDown), INA_PIN(InaPin), INB_PIN(InbPin), currentPower(0), PwmHandle(setupPwmWrite(PwmGen, PwmPin))
 {
-  PWM_PIN = PwmPin;
-  INA_PIN = InaPin;
-  INB_PIN = InbPin;
-  currentPower = 0;
-  inType = InputPower;
-  invert = upsideDown;
-  
   //brake motor by default
   digitalPinWrite(INA_PIN, LOW);
   digitalPinWrite(INB_PIN, LOW);
@@ -34,35 +30,33 @@ void VNH5019::move(const long movement)
     if(mov < 0)
     {
       mov = abs(mov);
-      pwm = map(mov, 0, POWER_MAX, PWM_MIN, PWM_MAX);
+      pwm = map(mov, 0, POWERPERCENT_MAX, PWM_MIN, PWM_MAX);
 
       //set InB to 0 and InA to 1 for "reverse" rotation
       digitalPinWrite(INA_PIN, HIGH);
       digitalPinWrite(INB_PIN, LOW);
       
       //pulsate enable pin to control motor
-      pwmWrite(PWM_PIN, pwm);
+      pwmWriteDuty(PwmHandle, pwm);
     }
     
     //if forwards
     else if(mov > 0)
     {
-      pwm = map(mov, 0, POWER_MAX, PWM_MIN, PWM_MAX);
+      pwm = map(mov, 0, POWERPERCENT_MAX, PWM_MIN, PWM_MAX);
         
       //set InB to 1 and InA to 0 for forward rotation
       digitalPinWrite(INA_PIN, LOW);
       digitalPinWrite(INB_PIN, HIGH);
       
       //pulsate enable pin to control motor
-      pwmWrite(PWM_PIN, pwm);
+      pwmWriteDuty(PwmHandle, pwm);
     }
     
     //stop
     else if(mov == 0)
     {
-      pwmWrite(PWM_PIN, 0);//set all pins to 0 to brake motor
-      digitalPinWrite(INA_PIN, LOW);
-      digitalPinWrite(INB_PIN, LOW);
+      stop();
     }
   }
   
@@ -93,7 +87,7 @@ long VNH5019::getCurrentMove()
 
 void VNH5019::stop()
 {
-  pwmWrite(PWM_PIN, 0);//set all pins to 0 to brake motor
+  pwmWriteDuty(PwmHandle, 0);//set all pins to 0 to brake motor
   digitalPinWrite(INA_PIN, LOW);
   digitalPinWrite(INB_PIN, LOW);
   

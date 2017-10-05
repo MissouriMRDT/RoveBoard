@@ -19,21 +19,21 @@ extern roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_r
 //inputs: reference of a setup uart module from roveUartOpen, a pointer to the information to write
 //(can be address of a single piece of data, an array, etc), and how many bytes are to be sent.
 //returns: Information on how the process went based on roveBoard_ERROR enum
-extern roveBoard_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, size_t bytes_to_write);
+extern roveUart_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, size_t bytes_to_write);
 
 //reads bytes from a uart port
 //inputs: reference of a setup uart module from roveUartOpen, a pointer to the buffer to read into
 //(can be address of a single piece of data, an array, etc), and how many bytes are to be read.
 //returns: Information on how the process went based on roveBoard_ERROR enum
 //warning: Blocking, won't return until the uart has that many bytes in its incoming buffer.
-extern roveBoard_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
+extern roveUart_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
 
 //reads bytes from a uart port
 //inputs: reference of a setup uart module from roveUartOpen, a pointer to the buffer to read into
 //(can be address of a single piece of data, an array, etc), and how many bytes are to be read.
 //returns: Information on how the process went based on roveBoard_ERROR enum.
 //Nonblocking, so if there wasn't that amount of bytes currently in the uart's incoming data buffer it returns error
-extern roveBoard_ERROR roveUartReadNonBlocking(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
+extern roveUart_ERROR roveUartReadNonBlocking(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
 
 //checks how many bytes the uart currently has in its read buffer
 //inputs: reference of a setup uart module from roveUartOpen

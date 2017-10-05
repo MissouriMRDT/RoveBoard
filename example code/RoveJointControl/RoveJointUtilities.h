@@ -8,13 +8,13 @@
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
 //All the types of values that can be passed to and be returned from the clases in the control framework
-enum ValueType{InputSpeed, InputPosition, InputPower};
+enum ValueType{InputSpeed, InputPosition, InputPowerPercent};
 
 //the types of return statuses that can be returned from the joint interface's 'run output' methods. They are to inform
 //the caller of the status of the joint after attempting to carry out the user's command
 enum JointControlStatus
 {
-  //user's input was outside of the range boundaries accepted, user should check the valid input ranges based on what value type they specified in the interface's construction.4
+  //user's input was outside of the range boundaries accepted, user should check the valid input ranges based on what value type they specified in the interface's construction.
   //For instance, if the user constructed the interface to use speed values, then the inputs must be between SPEED_MIN and SPEED_MAX
   InvalidInput,
 
@@ -33,12 +33,15 @@ enum JointControlStatus
   OutputComplete,
   
   //Unable to perform desired joint control update as one or more of the output devices used by the joint have been disabled
-  DeviceDisabled
+  DeviceDisabled,
+
+  //IOAlgorithm returned error
+  AlgorithmError
 };
 
 //The common inputs and outputs between classes will fall between these limits, class should not expect to take or return values outside of these
 const int SPEED_MIN = -10000, SPEED_MAX = 10000; //1 value = .01 in/s
-const long POS_MIN = 0, POS_MAX = 72000; //started with base of 360.00 for deg, made to 36000 to work without float math, mult by two for better resolution. Each value means 360/72000 = .005 deg per value
-const int POWER_MIN = -1000, POWER_MAX = 1000; //measured in percentile, 1 = .1% power
+const long POS_MIN = 0, POS_MAX = 360000; //started with base of 360.000 for deg, made to 360000 to work without float math. Each value means 360/360000 = .001 deg per value
+const int POWERPERCENT_MIN = -1000, POWERPERCENT_MAX = 1000; //measured in percentile, 1 = .1% power
 
 #endif

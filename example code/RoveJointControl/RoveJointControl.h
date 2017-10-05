@@ -8,8 +8,7 @@
 
 #include "AbstractFramework.h"
 #include "RoveJointUtilities.h"
-#include "RotateJoint.h"
 #include "SingleMotorJoint.h"
-#include "TiltJoint.h"
+#include "DifferentialJoint.h"
 
 #endif

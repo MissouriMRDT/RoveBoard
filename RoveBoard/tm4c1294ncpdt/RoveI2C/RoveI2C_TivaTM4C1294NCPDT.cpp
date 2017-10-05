@@ -1,6 +1,7 @@
 #include <tm4c1294ncpdt/RoveI2C/RoveI2C_TivaTM4C1294NCPDT.h>
 #include "tm4c1294ncpdt/RovePinMap_TivaTM4C1294NCPDT.h"
 #include "tm4c1294ncpdt/Clocking/Clocking_TivaTM4C1294NCPDT.h"
+#include "utilities/Debug.h"
 #include "driverlib/pin_map.h"
 #include "inc/hw_i2c.h"
 #include "inc/hw_memmap.h"
@@ -10,7 +11,6 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
 
-static void debugFault(char msg[]);
 static void masterInitExpClk(uint32_t ui32Base, RoveI2C_Speed speed);
 static void initVerifyInput(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin);
 static RoveI2C_Error transferHandleError(uint32_t i2cBase);
@@ -824,12 +824,4 @@ static RoveI2C_Error transferHandleError(uint32_t i2cBase, uint32_t stopControl)
   }
 
   return errorGot;
-}
-
-static void debugFault(char msg[])
-{
-  while(1)
-  {
-
-  }
 }

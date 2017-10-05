@@ -2,13 +2,19 @@
 #define ROVEUARTSTRUCTURES_H_
 
 typedef enum {
-    ROVE_BOARD_ERROR_SUCCESS = 0,
-    ROVE_BOARD_ERROR_UNKNOWN = -1
-} roveBoard_ERROR;
+    ROVE_UART_ERROR_SUCCESS = 0,
+    ROVE_UART_ERROR_UNKNOWN = -1
+} roveUart_ERROR;
 
 typedef struct roveUART_Handle
 {
 	unsigned int uart_index;
+	bool initialized;
+
+	roveUART_Handle()
+	{
+	  initialized = false;
+	}
 } roveUART_Handle;
 
 #endif

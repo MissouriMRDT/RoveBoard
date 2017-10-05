@@ -1,33 +1,26 @@
 #include "GenPwmPhaseHBridge.h"
 #include "RoveBoard.h"
 
-GenPwmPhaseHBridge::GenPwmPhaseHBridge(const int PwmPin, const int PhPin, bool upsideDown) : OutputDevice()
-{
-  PWM_PIN = PwmPin;
-  PHASE_PIN = PhPin;
-  invert = upsideDown;
-  inType = InputPower;
+static const int PWM_MIN = 0, PWM_MAX = 255;
 
-  currentPower = 0;
-  magChangeLimUp = (POWER_MAX - POWER_MIN);
-  magChangeLimDown = (POWER_MAX - POWER_MIN);
-  rampUsed = false;
-  ENABLE_PIN = -1;
+GenPwmPhaseHBridge::GenPwmPhaseHBridge(const int PwmGen, const int PwmPin, const int PhPin, bool upsideDown)
+  : OutputDevice(InputPowerPercent, upsideDown), PHASE_PIN(PhPin), PwmHandle(setupPwmWrite(PwmGen, PwmPin)),
+    currentPower(0), rampUsed(false), ENABLE_PIN(-1)
+{
+  magChangeLimUp = (POWERPERCENT_MAX - POWERPERCENT_MIN);
+  magChangeLimDown = (POWERPERCENT_MAX - POWERPERCENT_MIN);
 }
 
-GenPwmPhaseHBridge::GenPwmPhaseHBridge(const int PwmPin, const int PhPin, const int EnPin, bool enLogicHigh, bool upsideDown) : OutputDevice()
+GenPwmPhaseHBridge::GenPwmPhaseHBridge(const int PwmGen, const int PwmPin, const int PhPin, const int EnPin, bool enLogicHigh, bool upsideDown)
+  : OutputDevice(InputPowerPercent, upsideDown), PHASE_PIN(PhPin), PwmHandle(setupPwmWrite(PwmGen, PwmPin)),
+    currentPower(0), rampUsed(false), ENABLE_PIN(EnPin), enableLogicHigh(enLogicHigh)
 {
-  PWM_PIN = PwmPin;
-  PHASE_PIN = PhPin;
-  ENABLE_PIN = EnPin;
-  enableLogicHigh = enLogicHigh;
-  inType = InputPower;
-  invert = upsideDown;
+  magChangeLimUp = (POWERPERCENT_MAX - POWERPERCENT_MIN);
+  magChangeLimDown = (POWERPERCENT_MAX - POWERPERCENT_MIN);
 
-  currentPower = 0;
-  magChangeLimUp = (POWER_MAX - POWER_MIN);
-  magChangeLimDown = (POWER_MAX - POWER_MIN);
-  rampUsed = false;
+  //set power will actually toggle turning on or off the device with the enable pin, so we want to make sure it's physically turned on
+  //at the start instead of just simply setting the enabled flag
+  setPower(true);
 }
 
 
@@ -46,25 +39,25 @@ void GenPwmPhaseHBridge::move(const long movement)
   //if supposed to move backwards
   if(mov < 0)
   {
-    pwm = map(-mov, 0, POWER_MAX, PWM_MIN, PWM_MAX);
+    pwm = map(-mov, 0, POWERPERCENT_MAX, PWM_MIN, PWM_MAX);
 
     //set phase to 1 for "reverse" rotation
     digitalPinWrite(PHASE_PIN, HIGH);
     
     //pulsate enable pin to control motor
-    pwmWrite(PWM_PIN, pwm);
+    pwmWriteDuty(PwmHandle, pwm);
   }
   
   //if forwards
   else if(mov > 0)
   {
-    pwm = map(mov, 0, POWER_MAX, PWM_MIN, PWM_MAX);
+    pwm = map(mov, 0, POWERPERCENT_MAX, PWM_MIN, PWM_MAX);
       
     //set phase to 0 for "forward" rotation
     digitalPinWrite(PHASE_PIN, LOW);
     
     //pulsate enable pin to control motor
-    pwmWrite(PWM_PIN, pwm);
+    pwmWriteDuty(PwmHandle, pwm);
   }
   
   //stop
@@ -79,7 +72,7 @@ void GenPwmPhaseHBridge::move(const long movement)
 
 void GenPwmPhaseHBridge::setPower(bool powerOn)
 {
-  //when enable pin does not have its default value, assume device was constructed with an enable pin
+
   if(ENABLE_PIN != -1)
   {
     int pinNewState = ((powerOn && enableLogicHigh) || (!powerOn && !enableLogicHigh)) ? HIGH : LOW;
@@ -145,13 +138,13 @@ int GenPwmPhaseHBridge::scaleRamp(int desiredPower)
   if(abs(desiredPower - currentPower) > magnitudeChangeLimit)
   {
     desiredPower = currentPower + sign(desiredPower - currentPower) * magnitudeChangeLimit;
-    if(desiredPower > POWER_MAX)
+    if(desiredPower > POWERPERCENT_MAX)
     {
-      desiredPower = POWER_MAX;
+      desiredPower = POWERPERCENT_MAX;
     }
-    else if(desiredPower < POWER_MIN)
+    else if(desiredPower < POWERPERCENT_MIN)
     {
-      desiredPower = POWER_MIN;
+      desiredPower = POWERPERCENT_MIN;
     }
   }
     
@@ -160,7 +153,7 @@ int GenPwmPhaseHBridge::scaleRamp(int desiredPower)
 
 long GenPwmPhaseHBridge::getCurrentMove()
 {
-  if(invert) //if we're inverted, then we technically move negatively even if we're moving in the 'positive' direction. The direction is the important part
+  if(invert)
   {
     return(currentPower * -1); 
   }
@@ -172,7 +165,6 @@ long GenPwmPhaseHBridge::getCurrentMove()
 
 void GenPwmPhaseHBridge::stop()
 {
-  pwmWrite(PWM_PIN, 0);//set enable to 0 to brake motor
-  digitalPinWrite(PHASE_PIN, LOW);
+  pwmWriteDuty(PwmHandle, 0);
   currentPower = 0;
 }

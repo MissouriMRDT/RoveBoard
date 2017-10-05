@@ -1,35 +1,37 @@
 #include "PIAlgorithm.h"
-
 #include "RoveBoard.h"
 
-PIAlgorithm::PIAlgorithm(int inKP, int inKI, float inDT) : IOAlgorithm()
+static const int DEFAULT_MINMAG = (POWERPERCENT_MAX * .1); //The default min magnitude of power the motor is allowed to move at. 10% of motor power
+static const float IMPOSSIBLE_MOVEMENT = 370; //return value for functions that calculate travel routes that means the destination can't be reached
+
+void PIAlgorithm::verifyFdev()
 {
-  KI = inKI;
-  KP = inKP;
-  DT = inDT;
-  power_minMag = DEFAULT_MINMAG;
-  deg_deadBand = 1;
-  errorSummation = 0;
-  inType = InputPosition;
-  outType = InputPower;
-  feedbackInType = InputPosition;
-  hardStopPos1 = -1;
-  hardStopPos2 = -1;
+  if(feedbackDev->fType == inType)
+  {
+    validConstruction = true;
+  }
+  else
+  {
+    validConstruction = false;
+  }
 }
 
-PIAlgorithm::PIAlgorithm(int inKP, int inKI, float inDT, int inpower_minMag) : IOAlgorithm()
+PIAlgorithm::PIAlgorithm(int inKP, int inKI, float inDT, FeedbackDevice* fDev)
+: DrivingAlgorithm(InputPosition, InputPowerPercent), KI(inKI), KP(inKP), DT(inDT), power_minMag(DEFAULT_MINMAG),
+  deg_deadBand(1), errorSummation(0), hardStopPos1(-1), hardStopPos2(-1), feedbackDev(fDev)
 {
-  KI = inKI;
-  KP = inKP;
-  DT = inDT;
-  power_minMag = inpower_minMag;
-  deg_deadBand = 1;
-  errorSummation = 0;
-  inType = InputPosition;
-  outType = InputPower;
-  feedbackInType = InputPosition;
-  hardStopPos1 = -1;
-  hardStopPos2 = -1;
+  //if the feedback device's data type doesn't mesh with our data type, then
+  //it won't work
+  verifyFdev();
+}
+
+PIAlgorithm::PIAlgorithm(int inKP, int inKI, float inDT, FeedbackDevice* fDev, int inpower_minMag)
+  : DrivingAlgorithm(InputPosition, InputPowerPercent), KI(inKI), KP(inKP), DT(inDT), power_minMag(inpower_minMag),
+    deg_deadBand(1), errorSummation(0), hardStopPos1(-1), hardStopPos2(-1), feedbackDev(fDev)
+{
+  //if the feedback device's data type doesn't mesh with our data type, then
+  //it won't work
+  verifyFdev();
 }
 
 float PIAlgorithm::dist360(int pos_rotationUnits)
@@ -169,7 +171,7 @@ void PIAlgorithm::setHardStopPositions(float hardStopPos1_deg, float hardStopPos
 long PIAlgorithm::runAlgorithm(const long input, bool * ret_OutputFinished)
 {
   // Check if the Algorithm class has actually been initialized or not. If not, kill the function.
-  if (feedbackInitialized == false)
+  if (validConstruction == false)
   {
     *ret_OutputFinished = false;	
     return 0;
@@ -191,22 +193,36 @@ long PIAlgorithm::runAlgorithm(const long input, bool * ret_OutputFinished)
   }
 
   // Check if the current value of the rotation is within the margin-of-error acceptable for the location.
-  // If so, set the value to be OutputFinished to be true, so that the function should not run again.
+  // If so, set the value to be OutputFinished to be true, so the user knows the movement is complete.
   if (-deg_deadBand < deg_disToDest && deg_disToDest < deg_deadBand)
   {
     *ret_OutputFinished = true;
-    return 0;
+
+    if(supportIsPersistant)
+    {
+      return supportingAlgorithm->addToOutput(input, 0);
+    }
+    else
+    {
+      return 0;
+    }
   }
   
   // Calculate the value of how fast the motor needs to turn at its current interval
   int pwr_out = (KP * deg_disToDest + KI * errorSummation);
   
+  // if there's a supporting algorithm attached, run its output as well
+  if(supportUsed)
+  {
+    pwr_out += supportingAlgorithm->addToOutput(input, pwr_out);
+  }
+
   // Check for fringe cases if the power out value is outside of the acceptable range,
   // forcing the value to return back into the acceptable range.
-  if (pwr_out > POWER_MAX)
-    pwr_out = POWER_MAX;
-  else if (pwr_out < POWER_MIN)
-    pwr_out = POWER_MIN;
+  if (pwr_out > POWERPERCENT_MAX)
+    pwr_out = POWERPERCENT_MAX;
+  else if (pwr_out < POWERPERCENT_MIN)
+    pwr_out = POWERPERCENT_MIN;
   else if (pwr_out < power_minMag && pwr_out > 0)
     pwr_out = power_minMag;
   else if (pwr_out > -power_minMag && pwr_out < 0)

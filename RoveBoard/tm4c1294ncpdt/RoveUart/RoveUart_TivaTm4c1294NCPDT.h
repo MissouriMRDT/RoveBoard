@@ -56,6 +56,8 @@
 #define AlwaysZero 3
 #define AlwaysOne 4
 
+
+
 //std functions
 
 //sets up the specified uart to run at the specified baud rate
@@ -64,28 +66,29 @@
 //warning: Though it can go up to 7.5 Mb/s, the hardware grows more difficult to work with the higher the speed. Unless
 //the electricals set up the board specifically for high speed communication, it's usually best to stay below 1Mb/s if talking to another
 //microcontroller; if talking to preset IC, then use whatever baud rate it naturally supports.
+//warning: function enters infinite fault loop if arguments are wrong (IE if uart_index isn't from 0 to 7)
 roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate);
 
 //writes bytes out on a uart port
 //inputs: reference of a setup uart module from roveUartOpen, a pointer to the information to write
 //(can be address of a single piece of data, an array, etc), and how many bytes are to be sent.
-//returns: Information on how the process went based on roveBoard_ERROR enum
+//returns: Information on how the process went based on roveUart_ERROR enum
 //warning: Function is blocking, will stay in function until the information is written out.
-roveBoard_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, size_t bytes_to_write);
+roveUart_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, size_t bytes_to_write);
 
 //reads bytes from a uart port
 //inputs: reference of a setup uart module from roveUartOpen, a pointer to the buffer to read into
 //(can be address of a single piece of data, an array, etc), and how many bytes are to be read.
-//returns: Information on how the process went based on roveBoard_ERROR enum
+//returns: Information on how the process went based on roveUart_ERROR enum
 //warning: Blocking, won't return until the uart has that many bytes in its incoming buffer.
-roveBoard_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
+roveUart_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
 
 //reads bytes from a uart port
 //inputs: reference of a setup uart module from roveUartOpen, a pointer to the buffer to read into
 //(can be address of a single piece of data, an array, etc), and how many bytes are to be read.
-//returns: Information on how the process went based on roveBoard_ERROR enum.
+//returns: Information on how the process went based on roveUart_ERROR enum.
 //Nonblocking, so if there wasn't that amount of bytes currently in the uart's incoming data buffer it returns error
-roveBoard_ERROR roveUartReadNonBlocking(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
+roveUart_ERROR roveUartReadNonBlocking(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
 
 //checks how many bytes the uart currently has in its read buffer
 //inputs: reference of a setup uart module from roveUartOpen
@@ -101,8 +104,8 @@ int roveUartPeek(roveUART_Handle uart);
 
 //changes the uart's output settings such as settings about its parity bit, stop bits, and word length
 //inputs: reference of a setup uart module from roveUartOpen, and arguments based on the constants defined above
-//returns: Information on how the process went based on roveBoard_ERROR enum.
-roveBoard_ERROR roveUartSettings(roveUART_Handle uart, unsigned int parityBits, unsigned int stopBits, unsigned int wordLength);
+//returns: Information on how the process went based on roveUart_ERROR enum.
+roveUart_ERROR roveUartSettings(roveUART_Handle uart, unsigned int parityBits, unsigned int stopBits, unsigned int wordLength);
 
 
 #endif /* ROVEBOARD_TM4C1294NCPDT_ROVEBOARD_TM4C1294NCPDT_ROVEUART_ROVEUART_TIVATM4C1294NCPDT_H_ */

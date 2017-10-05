@@ -7,26 +7,19 @@ bool JointInterface::verifyInput(long inputToVerify)
 	  case InputSpeed:
 		return SPEED_MIN <= inputToVerify && inputToVerify <= SPEED_MAX;
 	  case InputPosition:
-		return POS_MIN <= inputToVerify && inputToVerify <= POS_MIN;
-	  case InputPower:
-		return POWER_MIN <= inputToVerify && inputToVerify <= POWER_MAX;
+		return POS_MIN <= inputToVerify && inputToVerify <= POS_MAX;
+	  case InputPowerPercent:
+		return POWERPERCENT_MIN <= inputToVerify && inputToVerify <= POWERPERCENT_MAX;
 	  default:
 	    return inputToVerify == 0;
   }
 }
 
-void IOAlgorithm::setFeedDevice(FeedbackDevice* fdDev)
+bool JointInterface::switchModules(ValueType newInputType, DrivingAlgorithm* newAlgorithm)
 {
-  feedbackDev = fdDev;
-  feedbackInitialized = true;
-}
-
-bool JointInterface::switchToClosedAlg(ValueType newInputType, IOAlgorithm* newAlgorithm, FeedbackDevice* newFeed)
-{
-  if((newInputType == newAlgorithm->inType) && (controller1->inType == newAlgorithm->outType) && (newAlgorithm->feedbackInType == newFeed->fType))
+  if((newInputType == newAlgorithm->inType) && (controller1->inType == newAlgorithm->outType))
   {
     manip = newAlgorithm;
-    manip->setFeedDevice(newFeed);
     inType = newInputType;
     
     algorithmUsed = true;
@@ -39,9 +32,59 @@ bool JointInterface::switchToClosedAlg(ValueType newInputType, IOAlgorithm* newA
   }
 }
 
-bool JointInterface::switchToOpenAlg(ValueType newInputType)
+bool JointInterface::switchModules(ValueType newInputType, DrivingAlgorithm* newAlgorithm, OutputDevice* newDevice)
 {
-  if(newInputType == controller1->inType)
+  if((newInputType == newAlgorithm->inType) && (newDevice->inType == newAlgorithm->outType))
+   {
+     manip = newAlgorithm;
+     inType = newInputType;
+     controller1 = newDevice;
+
+     algorithmUsed = true;
+
+     return(true);
+   }
+   else
+   {
+     return(false);
+   }
+}
+
+bool JointInterface::switchModules(ValueType newInputType, OutputDevice* newDevice)
+{
+  bool valid = false;
+
+  if(algorithmUsed)
+  {
+    if(((newInputType == manip->inType) && newDevice->inType == manip->outType))
+    {
+      valid = true;
+    }
+  }
+  else if((newInputType == newDevice->inType))
+  {
+    valid = true;
+  }
+
+  if(!valid)
+  {
+    return false;
+  }
+  else
+  {
+    inType = newInputType;
+    controller1 = newDevice;
+    return(true);
+  }
+}
+
+bool JointInterface::removeAlgorithm(ValueType newInputType)
+{
+  if(!algorithmUsed)
+  {
+    return(true);
+  }
+  else if(newInputType == controller1->inType)
   {
     inType = newInputType;
     manip = 0;
@@ -53,4 +96,40 @@ bool JointInterface::switchToOpenAlg(ValueType newInputType)
   {
     return(false);
   }
+}
+
+bool JointInterface::removeAlgorithm(ValueType newInputType, OutputDevice* newDevice)
+{
+  if(newInputType == newDevice->inType)
+  {
+    inType = newInputType;
+    manip = 0;
+    algorithmUsed = false;
+    controller1 = newDevice;
+
+    return(true);
+  }
+  else
+  {
+    return(false);
+  }
+}
+
+bool IOConverter::addSupportingAlgorithm(SupportingAlgorithm* support)
+{
+  if(outType == ((IOConverter*)support)->outType && inType == ((IOConverter*)support)->inType)
+  {
+    supportingAlgorithm = support;
+    supportUsed = true;
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+void IOConverter::persistantSupport(bool persistant)
+{
+  supportIsPersistant = persistant;
 }
