@@ -8,6 +8,9 @@
 #ifndef ROVEBOARD_STRUCTURES_ROVEPWMWRITESTRUCTURES_H_
 #define ROVEBOARD_STRUCTURES_ROVEPWMWRITESTRUCTURES_H_
 
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef struct rovePwmWrite_Handle
 {
   bool initialized;

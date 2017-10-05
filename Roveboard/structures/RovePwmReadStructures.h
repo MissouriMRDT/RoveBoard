@@ -8,6 +8,9 @@
 #ifndef ROVEBOARD_STRUCTURES_ROVEPWMREADSTRUCTURES_H_
 #define ROVEBOARD_STRUCTURES_ROVEPWMREADSTRUCTURES_H_
 
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef struct rovePwmRead_Handle
 {
   bool initialized;

@@ -8,6 +8,9 @@
 #ifndef ROVEBOARD_STRUCTURES_ROVETIMERSTRUCTURES_H_
 #define ROVEBOARD_STRUCTURES_ROVETIMERSTRUCTURES_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+
 typedef struct roveTimer_Handle
 {
     bool initialized;
