@@ -17,9 +17,15 @@ It's not necessary for every microcontroller to implement every feature noted in
 Be sure to read the wiki for more helpful things such as visual pinmaps.
 
 ## Files and folders
-At the top, you'll see a series of files that follow the naming pattern of "RoveBoard.h" and "RoveBoard_(microcontroller name).h". The former is the primary include for roveware files like RoveComm to include, and returns a list of prototyped functions that each board that supports their feature has an instance of. But, Roveboard.h importantly doesn't return the actual definitions of those functions, just the names and the fact that they exist. The other roveboard files like "RoveBoard_TM4C1294NCPDT.h" return those functions and others that work specifically on the tm4c and define them. 
+* At the top, you'll see a series of files that follow the naming pattern of `RoveBoard.h` and `RoveBoard_(microcontroller name).h`. 
+  - The former is the primary include for non-board-specific roveware files like RoveComm to include, and returns a list of prototyped functions for it to use. But, `Roveboard.h` importantly doesn't return the actual definitions of those functions, just the names and the fact that they exist. 
+  - The other roveboard files like `RoveBoard_TM4C1294NCPDT.h` return those functions and others that work specifically on the tm4c and define them. You need to include the roveboard for your specific microcontroller in your main.cpp file for everything to work.
 
-The folders inside RoveBoard are split into four categories; generics, which contain files that name the standardized functions, utilities, which contain supporting functions, macros, and classes that aren't device-specific so are there to be helpful to the entire framework, structures which contain the typenames and feature-wide constants for the individual features, and lastly you'll see folders devoted to a specific processor like 'tm4c1294ncpdt'. Those folders contain the files that list and define the functions made for their processor, and what most users of RoveBoard will be interested in looking at.
+* The folders inside RoveBoard are split into four categories. 
+  - `generics`, which contain files that prototype the standardized functions for each feature
+  - `utilities`, which contain supporting functions, macros, and classes that aren't device-specific so are there to be helpful to the entire framework 
+  - `structures`, which contain the typenames and feature-wide constants for the individual features 
+  - lastly you'll see folders devoted to a specific processor like 'tm4c1294ncpdt'. Those folders contain the files that list and define the functions made for their processor, and what most users of RoveBoard will be interested in looking at.
 
 ## Supported microcontrollers and what features they implement
 * Tiva tm4c1294ncpdt - pwm writing, pwm reading, clocking, digital pin, Ethernet, Uart/serial, timerInterface, I2c
@@ -27,7 +33,7 @@ The folders inside RoveBoard are split into four categories; generics, which con
 
 ## Dependencies
 * Note that all external dependencies can be downloading via links in this repo's wiki section.
-* The tiva tm4c1294ncpdt libraries depend on the Tivaware firmware, provided by texas instruments for using the tiva. You'll need to download it yourself and point the compiler to it so that the #Include's in all the tiva files can reference it.
+* The tiva tm4c1294ncpdt libraries depend on the [Tivaware](https://drive.google.com/open?id=0B09vx2Ss1vOARkVHSnllM090SEU) firmware, provided by texas instruments for using the tiva. You'll need to download it yourself and point the compiler to it so that the #Include's in all the tiva files can reference it.
 
 ## Usage
 1) In your main.cpp, before anything else include the roveboard_x.h file for the processor you're using
@@ -46,4 +52,4 @@ The folders inside RoveBoard are split into four categories; generics, which con
 3) You'll need to generate a .lib file for your new library, so that linkers can actually use it. Most psuedo-professional IDE's will have ways for you to generate them.
 4) Make sure it compiles and test it first; you can use the included example code from 2016's arm, if you want
 5) For pete's sake, make sure the H files at the very least include halfway decent comments/documentation; make sure at the least the programmers know what hardware components are used when a function is called so they can avoid conflicts if necessary and aren't blindsided by anything. High visibility is a key difference between what we do and what arduino/energia does
-6) Be sure to update the pinmap in the wiki, if relevant
+6) Be sure to update the pinmap and dependencies pages in the wiki, if relevant
