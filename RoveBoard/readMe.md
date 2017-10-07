@@ -26,6 +26,7 @@ The folders inside RoveBoard are split into four categories; generics, which con
 
 
 ## Dependencies
+* Note that all external dependencies can be downloading via links in this repo's wiki section.
 * The tiva tm4c1294ncpdt libraries depend on the Tivaware firmware, provided by texas instruments for using the tiva. You'll need to download it yourself and point the compiler to it so that the #Include's in all the tiva files can reference it.
 
 ## Usage
