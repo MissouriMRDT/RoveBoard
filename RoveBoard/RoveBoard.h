@@ -21,6 +21,7 @@
 #include "generics/RoveTimer.h"
 #include "generics/RoveUart.h"
 #include "utilities/RoveUtilities.h"
+#include "utilities/Debug.h"
 
 
 #endif /* ROVEBOARD_ROVEBOARD_H_ */

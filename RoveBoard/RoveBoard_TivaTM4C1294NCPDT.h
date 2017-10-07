@@ -16,6 +16,7 @@
 #endif
 
 #include "utilities/RoveUtilities.h"
+#include "utilities/Debug.h"
 #include "tm4c1294ncpdt/Clocking/Clocking_TivaTM4C1294NCPDT.h"
 #include "tm4c1294ncpdt/DigitalPin/DigitalPin_TivaTM4C1294NCPDT.h"
 #include "tm4c1294ncpdt/RovePwmRead/RovePwmRead_TivaTM4C1294NCPDT.h"
