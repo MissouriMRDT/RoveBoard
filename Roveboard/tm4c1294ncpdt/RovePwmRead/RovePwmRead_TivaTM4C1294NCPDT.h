@@ -1,16 +1,17 @@
-/* Programmer: Drue Satterfield
+/* Programmers: Drue Satterfield, Timur Guler
  * Date of creation: 10/14/2016
  * Microcontroller used: Tiva TM4C1294NCPDT
- * Hardware components used by this file: Internal timers 1-5
+ * Hardware components used by this file: Internal timers 0-5
  * 
  * Update 10/17/16: under nominal PWM conditions, return values work on timer 1. Edge conditions do not work, timeout interrupt is buggy as hell, currently disabled in timer setup
  * Update 10/20/16: works for 0% and 100%. All pins tested.
  * Update 10/21/16: Works when all 5 are on at once
  * Update 11/3/16: added pin map layer so the user now only has to pass in one argument
  * Update 10/4/17: Redid external API to now need a pwmRead handle instance, to enforce the user actually calling init beforehand
+ * Update 10/9/17: Added ability to use timer0 -- Timur Guler
  * 
  * Description: This library is used to read a pwm signal on 
- * pins utilized by timers 1-5. The program is started by calling the 
+ * pins utilized by timers 0-5. The program is started by calling the
  * pwmStart function, and afterwords the program shall use
  * the timer attached to that pin to monitor for incoming
  * pulses. When the voltage on that pin changes, the timer
@@ -25,7 +26,7 @@
  * This library uses the roveboard pin mapping standard, for passing pins to the functions. Refer to the roveboard github's wiki for more info.
  *
  * Acceptable pins (and which timer they use, don't try to use multiple pins that use the same timer)
- * A2 (t1), A4(t2), A6(t3), B0(t4), B2(t5), D2(t1), D4(t3), L6(t1), M0(t2), M2(t3), M4(t4), M6(t5)
+ * A0(t0), A2 (t1), A4(t2), A6(t3), B0(t4), B2(t5), D0(t0), D2(t1), D4(t3), L4(t0), L6(t1), M0(t2), M2(t3), M4(t4), M6(t5)
  *
  * Warnings: The file triggers interrupts quite frequently, 
  * once ever time the voltage on the pin changes and a second 
@@ -46,11 +47,19 @@
 #include <stdbool.h>
 #include "structures/RovePwmReadStructures.h"
 
-const int readModule1 = 1;
-const int readModule2 = 2;
-const int readModule3 = 3;
-const int readModule4 = 4;
-const int readModule5 = 5;
+const int ReadModule0 = 0;
+const int ReadModule1 = 1;
+const int ReadModule2 = 2;
+const int ReadModule3 = 3;
+const int ReadModule4 = 4;
+const int ReadModule5 = 5;
+
+//interrupt priorities on the tiva go from 0-7, 0 highest priority.
+//edge capture interrupt = interrupt triggered when a pwm wave comes in from the gpio pin
+//timeout interrupt = interrupt triggered when timer times out (ran in parallel with edge capture, used
+// to detect when no edge has come in in a certain amount of time)
+const uint8_t PwmReadEdgeCaptureInterruptPriority_Default = 2;
+const uint8_t PwmReadTimeoutInterruptPriority_Default = 3;
 
 //Begins reading pwm pulses on the specified pin using the specified timer.
 //Input: The pwmRead module to use, and which of its associated GPIO pins are to be used
@@ -82,5 +91,11 @@ uint32_t getTotalPeriod_us(rovePwmRead_Handle handle);
 //Note: initPwmRead must be called before hand
 //Output: On-period of pulse in microseconds
 uint32_t getOnPeriod_us(rovePwmRead_Handle handle);
+
+//Sets the interrupt priority for the specified reading instance
+//Input: The handle for the pwm reading instance to modify, the priority of the edge capture, priority of timeout.
+//       The priority is between 0 and 7, with 0 being highest priority.
+//Note: initPwmRead must be called before hand
+void setPwmReadInterruptPriority(rovePwmRead_Handle handle, uint8_t edgeCapturePriority, uint8_t timeoutCapturePriority);
 
 #endif

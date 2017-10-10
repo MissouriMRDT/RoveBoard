@@ -12,11 +12,7 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/timer.h"
 
-/* Update 10/17/16: under nominal PWM conditions, return values work on timer 1. Edge conditions do not work, timeout interrupt is buggy as hell, currently disabled in timer setup
- * Update 10/20/16: works for 0% and 100%. All pins tested. 
- * Update 10/21/16: Works when all 5 are on at once
- * Update 11/3/16: added pin map layer so the user now only has to pass in one argument
- *  Algorithm description:
+/* Algorithm description:
    How this works is that a timer module is set up so that its 
    timer A (each module actually has 2 mini timers inside, A and  
    B) will be put into edge-time-capture mode, and timer B gets 
@@ -80,7 +76,7 @@
    Working together, the two interrupts are able to read PWM
    signals with little data being lost. 
    
-   The library is built to do this for all 5 timers that can be
+   The library is built to do this for all 6 timers that can be
    used if need be. 
 
    I also made a bunch of static const lookup tables for the 
@@ -121,23 +117,24 @@ static const uint32_t pinPortBaseTable[5] = {GPIO_PORTA_BASE, GPIO_PORTB_BASE, G
 // and pin number being used, 0-7
 static const uint32_t timerPinConfigTable[5][8] = 
 {
-  {0, 0, GPIO_PA2_T1CCP0, GPIO_PA3_T1CCP1, GPIO_PA4_T2CCP0, GPIO_PA5_T2CCP1, GPIO_PA6_T3CCP0, GPIO_PA7_T3CCP1}, //A0-A7
+  {GPIO_PA0_T0CCP0, GPIO_PA1_T0CCP1, GPIO_PA2_T1CCP0, GPIO_PA3_T1CCP1, GPIO_PA4_T2CCP0, GPIO_PA5_T2CCP1, GPIO_PA6_T3CCP0, GPIO_PA7_T3CCP1}, //A0-A7
   {GPIO_PB0_T4CCP0, GPIO_PB1_T4CCP1, GPIO_PB2_T5CCP0, GPIO_PB3_T5CCP1, 0, 0, 0, 0}, //B0-B7
   {GPIO_PD0_T0CCP0, GPIO_PD1_T0CCP1, GPIO_PD2_T1CCP0, GPIO_PD3_T1CCP1, GPIO_PD4_T3CCP0, GPIO_PD5_T3CCP1, GPIO_PD6_T4CCP0, GPIO_PD7_T4CCP1}, //D0-D7
-  {0, 0, 0, 0, 0, GPIO_PL6_T1CCP0, GPIO_PL7_T1CCP1}, //L0-L7
+  {0, 0, 0, 0, GPIO_PL4_T0CCP0, GPIO_PL5_T0CCP1, GPIO_PL6_T1CCP0, GPIO_PL7_T1CCP1}, //L0-L7
   {GPIO_PM0_T2CCP0, GPIO_PM1_T2CCP1, GPIO_PM2_T3CCP0, GPIO_PM3_T3CCP1, GPIO_PM4_T4CCP0, GPIO_PM5_T4CCP1, GPIO_PM6_T5CCP0, GPIO_PM7_T5CCP1}  //M0-M7
 };
 
 //table for referencing which timer number is related to which gpio port and pin
 //input: [0-4 for a,b,d,l, and m] [0-7 for pins 0-7]
-//output: 1 for timer 1, 2 for timer 2, etc. 0 if nothing on that port-pin combo
+//output: 1 for timer 1, 2 for timer 2, etc. 8 if nothing on that port-pin combo
+static const uint8_t PinToTimerNumberTable_None = 8;
 static const uint8_t pinToTimerNumberTable[5][8] = 
 {
-  {0, 0, 1, 0, 2, 0, 3, 0}, //A0-A7
-  {4, 0, 5, 0, 0, 0, 0, 0}, //B0-B7
-  {0, 0, 1, 0, 3, 0, 4, 0}, //D0-D7
-  {0, 0, 0, 0, 0, 1, 0, 0}, //L0-L7
-  {2, 0, 3, 0, 4, 0, 5, 0}  //M0-M7
+  {0, 0, 1, 1, 2, 2, 3, 3}, //A0-A7
+  {4, 4, 5, 5, PinToTimerNumberTable_None, PinToTimerNumberTable_None, PinToTimerNumberTable_None, PinToTimerNumberTable_None}, //B0-B7
+  {0, 0, 1, 1, 3, 3, 4, 4}, //D0-D7
+  {PinToTimerNumberTable_None, PinToTimerNumberTable_None, PinToTimerNumberTable_None, PinToTimerNumberTable_None, 0, 0, 1, 1}, //L0-L7
+  {2, 2, 3, 3, 4, 4, 5, 5}  //M0-M7
 };
 
 //Table for referencing energia-style pin constant mapping to 
@@ -349,12 +346,12 @@ static const uint8_t pinMapToPinNum[]   = {
 };
 
 //table for referencing timer number to their hardware base addresses
-//input: 0-4 for timer 1, 2, 3, 4, 5
+//input: 0-5 for timer 0, 1, 2, 3, 4, 5
 //output: base hardware address of the timer
-static const uint32_t timerBaseTable[5] = {TIMER1_BASE, TIMER2_BASE, TIMER3_BASE, TIMER4_BASE, TIMER5_BASE};
+static const uint32_t timerBaseTable[6] = {TIMER0_BASE, TIMER1_BASE, TIMER2_BASE, TIMER3_BASE, TIMER4_BASE, TIMER5_BASE};
 
 //number of timers used in this program
-static const int NumberOfTimersUsed = 5;
+static const int NumberOfTimersUsed = 6;
 
 //enum that keeps track of pin's last known reading state
 typedef enum Pinstate {pulseH, pulseL} Pinstate;
@@ -376,6 +373,8 @@ typedef volatile struct
 } timerData;
 
 //event handlers
+static void timeout0Handler();
+static void edgeCapture0Handler();
 
 static void timeout1Handler();
 static void edgeCapture1Handler();
@@ -420,7 +419,7 @@ static bool moduleUsesCorrectPins(uint8_t timerModule, uint8_t mappedPin);
 
 //each timer and through them PWM line has a data struct 
 //for their usage
-static timerData timer1Data, timer2Data, timer3Data, timer4Data, timer5Data;
+static timerData timer0Data, timer1Data, timer2Data, timer3Data, timer4Data, timer5Data;
 
 //the edge-not-recieved timeout check should last longer than any transmission period, so that when we say that the edge wasn't received,
 //we know it's not just the timeout moving too quickly for the pwm transmission. So, we have the timeout isr trigger a certain number 
@@ -429,6 +428,20 @@ static volatile uint8_t timeoutCounter = 0;
 
 //edge-not-recieved timeout check should do its checking after this many timeouts (start with 1, not 0)
 //static const uint8_t TimeoutCounterLimit = 1; didn't wind up needing it
+
+//interrupt handler for timer 0's timeout event.
+static void timeout0Handler()
+{
+  TimerIntClear(TIMER0_BASE, TIMER_TIMB_TIMEOUT); // clear the timer interrupt
+  timeoutGenHandler(&timer1Data);
+}
+
+//interrupt handelr for timer 0's edge capture event.
+static void edgeCapture0Handler()
+{
+  TimerIntClear(TIMER0_BASE, TIMER_CAPA_EVENT); // clear the timer interrupt
+  edgeCaptureGenHandler(&timer0Data, TIMER0_BASE);
+}
 
 //interrupt handler for timer 1's timeout event. 
 static void timeout1Handler()
@@ -598,6 +611,9 @@ static void edgeCaptureGenHandler(timerData * data, uint32_t timerBase)
   uint8_t pinMacro = data -> pinMacro;
   data->edgeRecieved = true;
   
+  valueFirst16 = HWREG(timerBase + TIMER_O_TAR); //first 16 bits of timer snapshot in timer register
+  valueLast8 = HWREG(timerBase + TIMER_O_TAPS);  //last 8 bits of timer snapshot in timer prescale snapshot register. This was NOT in the driverlib, before anyone whines
+
   //If pin is high, we recieved rising edge. Calculate time of the off period based on the 
   //newly captured time of the rise capture minus the time of the last
   //recorded fall capture, IE the time the line was low. 
@@ -606,14 +622,12 @@ static void edgeCaptureGenHandler(timerData * data, uint32_t timerBase)
   if((GPIOPinRead(portBase, pinMacro) & pinMacro) > 0)
   {
     data->pinState = pulseH;
-    valueFirst16 = HWREG(timerBase + TIMER_O_TAR); //first 16 bits of timer snapshot in timer register
-    valueLast8 = HWREG(timerBase + TIMER_O_TAPS);  //last 8 bits of timer snapshot in timer prescale snapshot register. This was NOT in the driverlib, before anyone whines
     data->tr = (int64_t)((uint32_t)valueFirst16 + (uint32_t)((uint32_t)valueLast8 << 16)); //put the two together into one 24 bit value
 
     //if the newly read value is less than the last recorded val, timer reset in between readings. For calculation of tOff, set tf down the timer period
     if(data->tr <  data->tf)
     {
-      data->tf -=  (int64_t) data->timerLoad; 
+      data->tf -= (int64_t)data->timerLoad;
     }
 
     data->tOff = (uint32_t)(data->tr -  data->tf);
@@ -640,8 +654,6 @@ static void edgeCaptureGenHandler(timerData * data, uint32_t timerBase)
           
     if(data->periodIncalculable == false) //if period is noted to be incalculable this cycle, skip it
     { 
-      valueFirst16 = HWREG(timerBase + TIMER_O_TAR);
-      valueLast8 = HWREG(timerBase + TIMER_O_TAPS);
       data->tf = (int64_t)((uint32_t)valueFirst16 + (uint32_t)((uint32_t)valueLast8 << 16));
       
       if(data->tf < data->tr)
@@ -710,7 +722,7 @@ static bool initPwmRead(char gpioPort, uint8_t pinNumber)
 
   timerNumber = getTimerNumber(gpioPort, pinNumber);
   
-  if(timerNumber > 5 || timerNumber < 1) //can only use timers 1-5
+  if(timerNumber > NumberOfTimersUsed) //can only use timers 0-5
   {
     return(false);
   }
@@ -772,7 +784,7 @@ static void stopPwmRead(char portLetter, uint8_t pinNumber)
   uint8_t pinMacro;
   timerData * dataUsed;
   
-  timerData * datas [5] = {&timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
+  timerData * datas [NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
 
   //get the port base for the passed letter
   portRefNum = getPortRefNum(portLetter);
@@ -855,7 +867,7 @@ static uint8_t getDuty(char portLetter, uint8_t pinNumber)
   uint8_t duty;
   bool dataFound = false;
   
-  timerData * datas [5] = {&timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
+  timerData * datas [NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
 
   //get the port base for the passed letter
   portRefNum = getPortRefNum(portLetter);
@@ -899,7 +911,7 @@ uint32_t getTotalPeriod_us(rovePwmRead_Handle handle)
 {
   if(handle.initialized == false)
   {
-    debugFault("stopPwmRead: pwmRead handle not initialized (did you call the init function?)");
+    debugFault("getTotalPeriod_us: pwmRead handle not initialized (did you call the init function?)");
   }
 
   uint8_t mappedPin = handle.mappedPin;
@@ -936,7 +948,7 @@ static uint32_t getTotalPeriod_us(char portLetter, uint8_t pinNumber)
   uint32_t tOff;
   bool dataFound = false;
   
-  timerData * datas [5] = {&timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
+  timerData * datas [NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
 
   //get the port base for the passed letter
   portRefNum = getPortRefNum(portLetter);
@@ -986,7 +998,7 @@ uint32_t getOnPeriod_us(rovePwmRead_Handle handle)
 {	
   if(handle.initialized == false)
   {
-    debugFault("stopPwmRead: pwmRead handle not initialized (did you call the init function?)");
+    debugFault("getOnPeriod_us: pwmRead handle not initialized (did you call the init function?)");
   }
 
   uint8_t mappedPin = handle.mappedPin;
@@ -1022,7 +1034,7 @@ static uint32_t getOnPeriod_us(char portLetter, uint8_t pinNumber)
   uint32_t tOn;
   bool dataFound = false;
   uint32_t onPeriod_us;
-  timerData * datas [5] = {&timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
+  timerData * datas [NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
   
   //get the port base for the passed letter
   portRefNum = getPortRefNum(portLetter);
@@ -1059,7 +1071,7 @@ static uint32_t getOnPeriod_us(char portLetter, uint8_t pinNumber)
     
   float onPeriod_s = (float)tOn / SysClockFreq;
   //tOn = on period in timer clock ticks (assumed to be using system clock). Divided by SysClockFreq = period in seconds. Times 1,000,000 = period in microseconds
-  onPeriod_us = (uint32_t)(onPeriod_s * 1000000); 
+  onPeriod_us = (uint32_t)(onPeriod_s * 1000000.0);
   return(onPeriod_us);
   
 }
@@ -1121,7 +1133,7 @@ static uint8_t getTimerNumber(char portLetter, uint8_t pinNumber)
 //initializes data for the pwm line associated with the passed timer
 static void initData(uint8_t timerNum, uint32_t timerLoad, uint8_t pinInitState, uint32_t port_base, uint8_t pin_macro)
 {
-  timerData *data[NumberOfTimersUsed] = {&timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
+  timerData *data[NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
   Pinstate pinState;
 
   if(pinInitState == 0)
@@ -1133,19 +1145,19 @@ static void initData(uint8_t timerNum, uint32_t timerLoad, uint8_t pinInitState,
     pinState = pulseH;
   }
 
-  if(1 <= timerNum && timerNum <= 5)
+  if(timerNum <= NumberOfTimersUsed)
   {
-    data[timerNum - 1] -> tOn = 0;
-    data[timerNum - 1] -> tOff = 0;
-    data[timerNum - 1] -> tr = 0;
-    data[timerNum - 1] -> tf = 0;
-    data[timerNum - 1] -> duty = 0;
-    data[timerNum - 1] -> portBase = port_base;
-    data[timerNum - 1] -> pinMacro = pin_macro;
-    data[timerNum - 1] -> timerLoad = timerLoad;
-    data[timerNum - 1] -> periodIncalculable = false;
-    data[timerNum - 1] -> edgeRecieved = false;
-    data[timerNum - 1] -> pinState = pinState;
+    data[timerNum] -> tOn = 0;
+    data[timerNum] -> tOff = 0;
+    data[timerNum] -> tr = 0;
+    data[timerNum] -> tf = 0;
+    data[timerNum] -> duty = 0;
+    data[timerNum] -> portBase = port_base;
+    data[timerNum] -> pinMacro = pin_macro;
+    data[timerNum] -> timerLoad = timerLoad;
+    data[timerNum] -> periodIncalculable = false;
+    data[timerNum] -> edgeRecieved = false;
+    data[timerNum] -> pinState = pinState;
   }
 }
 
@@ -1159,7 +1171,16 @@ static bool initTimer(uint32_t timerLoad, uint8_t timerNum)
   void (*captureHandler)(void);
   void (*timeHandler)(void);
   
-  if(timerNum == 1)
+  if(timerNum == 0)
+  {
+    timerBase = TIMER0_BASE;
+    timerPeriph = SYSCTL_PERIPH_TIMER0;
+    enableTimerIntAVal = INT_TIMER0A;
+    enableTimerIntBVal = INT_TIMER0B;
+    captureHandler = &edgeCapture0Handler;
+    timeHandler = &timeout0Handler;
+  }
+  else if(timerNum == 1)
   {
     timerBase = TIMER1_BASE;
     timerPeriph = SYSCTL_PERIPH_TIMER1;
@@ -1231,6 +1252,9 @@ static bool initTimer(uint32_t timerLoad, uint8_t timerNum)
   //set up interrupts
   TimerIntClear(timerBase, TIMER_CAPA_EVENT | TIMER_TIMB_TIMEOUT);
   TimerIntEnable(timerBase, TIMER_CAPA_EVENT | TIMER_TIMB_TIMEOUT);
+
+  IntPrioritySet(enableTimerIntAVal, (PwmReadEdgeCaptureInterruptPriority_Default << 5)); //priority is last 3 bits of 8 bit register
+  IntPrioritySet(enableTimerIntBVal, (PwmReadTimeoutInterruptPriority_Default << 5));
   IntEnable(enableTimerIntAVal| enableTimerIntBVal);
 
   //register interrupt functions 
@@ -1301,39 +1325,47 @@ static bool initGPIO(uint8_t portLetter, uint8_t pinNum, uint8_t * pinInitState,
   return(true);
 }
 
+//check to make sure that the timer selected is using the correct pins
+//TO SEE MAPPED PINS GO TO http://www.ti.com/lit/ds/symlink/tm4c1294ncpdt.pdf AND LOOK ON THE BOTTOM OF PAGE 957
 static bool moduleUsesCorrectPins(uint8_t timerModule, uint8_t mappedPin)
 {
   switch(timerModule)
   {
-    case readModule1:
+    case ReadModule0:
+      if(mappedPin == PD_0 || mappedPin == PA_0 || mappedPin == PL_4)
+      {
+        return true;
+      }
+      break;
+    case ReadModule1:
       if(mappedPin == PA_2 || mappedPin == PD_2 || mappedPin == PL_6)
       {
         return true;
       }
       break;
 
-    case readModule2:
+    case ReadModule2:
       if(mappedPin == PA_4 || mappedPin == PM_0)
       {
         return true;
       }
       break;
 
-    case readModule3:
+    case ReadModule3:
       if(mappedPin == PA_6 || mappedPin == PD_4 || mappedPin == PM_2)
       {
         return true;
       }
       break;
 
-    case readModule4:
+    case ReadModule4:
       if(mappedPin == PB_0 || mappedPin == PM_4)
       {
         return true;
       }
       break;
 
-    case readModule5:
+    case ReadModule5:
       if(mappedPin == PB_2 || mappedPin == PM_6)
       {
         return true;
@@ -1344,3 +1376,75 @@ static bool moduleUsesCorrectPins(uint8_t timerModule, uint8_t mappedPin)
   return false;
 }
 
+void setPwmReadInterruptPriority(rovePwmRead_Handle handle, uint8_t edgeCapturePriority, uint8_t timeoutCapturePriority)
+{
+  if(handle.initialized == false)
+  {
+    debugFault("setPwmReadInterruptPriority: pwmRead handle not initialized (did you call the init function?)");
+  }
+
+  uint8_t mappedPin;
+  uint8_t portRefNum;
+  char gpioPort;
+  uint8_t pinNumber;
+  uint8_t timerNum;
+  uint8_t enableTimerIntAVal;
+  uint8_t enableTimerIntBVal;
+
+  mappedPin = handle.mappedPin;
+
+  gpioPort = pinMapToPort[mappedPin];
+  if(gpioPort == 0) //0 is error value for this table
+  {
+    return;
+  }
+
+  pinNumber = pinMapToPinNum[mappedPin];
+  if(pinNumber == 255)
+  {
+    return; //255 is error value for this table
+  }
+
+  portRefNum = getPortRefNum(gpioPort);
+  timerNum = pinToTimerNumberTable[portRefNum][pinNumber];
+
+  if(timerNum == 0)
+  {
+    enableTimerIntAVal = INT_TIMER0A;
+    enableTimerIntBVal = INT_TIMER0B;
+  }
+  else if(timerNum == 1)
+  {
+    enableTimerIntAVal = INT_TIMER1A;
+    enableTimerIntBVal = INT_TIMER1B;
+  }
+  else if(timerNum == 2)
+  {
+    enableTimerIntAVal = INT_TIMER2A;
+    enableTimerIntBVal = INT_TIMER2B;
+  }
+  else if(timerNum == 3)
+  {
+    enableTimerIntAVal = INT_TIMER3A;
+    enableTimerIntBVal = INT_TIMER3B;
+  }
+  else if(timerNum == 4)
+  {
+    enableTimerIntAVal = INT_TIMER4A;
+    enableTimerIntBVal = INT_TIMER4B;
+  }
+  else if(timerNum == 5)
+  {
+    enableTimerIntAVal = INT_TIMER5A;
+    enableTimerIntBVal = INT_TIMER5B;
+  }
+  else
+  {
+    return ;
+  }
+
+  IntDisable(enableTimerIntAVal| enableTimerIntBVal);
+  IntPrioritySet(enableTimerIntAVal, (edgeCapturePriority << 5)); //priority is last 3 bits of 8 bit register
+  IntPrioritySet(enableTimerIntBVal, (timeoutCapturePriority << 5));
+  IntEnable(enableTimerIntAVal| enableTimerIntBVal);
+}
