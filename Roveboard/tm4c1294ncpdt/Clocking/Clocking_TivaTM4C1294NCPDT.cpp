@@ -4,10 +4,12 @@
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/sysctl.h"
+#include "inc/hw_sysctl.h"
 #include "driverlib/timer.h"
 #include "inc/hw_types.h"
 #include "driverlib/systick.h"
 #include "driverlib/interrupt.h"
+#include "driverlib/hibernate.h"
 #include "inc/hw_nvic.h"
 
 const uint32_t DefaultCpuFreq = 120000000;
@@ -39,8 +41,19 @@ void initSystemClocks()
   MAP_SysTickIntEnable();
   MAP_IntMasterEnable();
 
-  // PIOSC is used during Deep Sleep mode for wakeup
-  MAP_SysCtlPIOSCCalibrate(SYSCTL_PIOSC_CAL_FACT);  // Factory-supplied calibration used
+  //hibernate module needs to be set up to attempt to
+  //automatically calibrate the piosc
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_HIBERNATE);
+  while(!SysCtlPeripheralReady(SYSCTL_PERIPH_HIBERNATE));
+  HibernateEnableExpClk(F_CPU);
+  HibernateRTCEnable();
+  SysCtlDelay(1000);
+
+  if(SysCtlPIOSCCalibrate(SYSCTL_PIOSC_CAL_AUTO) == 0)
+  {
+    MAP_SysCtlPIOSCCalibrate(SYSCTL_PIOSC_CAL_FACT);  // Factory-supplied calibration used instead
+  }
+
 }
 
 uint32_t setCpuClockFreq(uint32_t newFrequency)
@@ -124,3 +137,9 @@ void registerSysTickCb(void (*userFunc)(uint32_t))
 		}
 	}
 }
+
+/* still in testing
+void calibratePiosc(uint8_t calValue)
+{
+  MAP_SysCtlPIOSCCalibrate(calValue);
+}*/

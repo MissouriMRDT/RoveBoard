@@ -42,6 +42,10 @@ uint32_t getCpuClockFreq();
 //it'll hang the program.
 void registerSysTickCb(void (*userFunc)(uint32_t));
 
+//slows down or speeds up the PIOSC internal clock, to try and calibrate it manually.
+//Values lower than 0x40 slow it down, greater speeds it up. 0x40 returns it to default calibration.
+//void calibratePiosc(uint16_t calValue); still in testing
+
 #ifdef __cplusplus
 extern "C" { //so that pure c files (like RoveEthernet's underside) can use these functions without compilation errors
 #endif
