@@ -32,7 +32,6 @@ Be sure to read the wiki for more helpful things such as visual pinmaps.
 
 ## Dependencies
 * Note that all external dependencies can be downloading via links in this repo's wiki section.
-* The tiva tm4c1294ncpdt libraries depend on the [Tivaware](https://drive.google.com/open?id=0B09vx2Ss1vOARkVHSnllM090SEU) firmware, provided by texas instruments for using the tiva. You'll need to download it yourself and point the compiler to it so that the #Include's in all the tiva files can reference it.
 
 ## Usage
 1) In your main.cpp, before anything else include the roveboard_x.h file for the processor you're using
