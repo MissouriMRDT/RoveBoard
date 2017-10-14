@@ -11,18 +11,18 @@
 #include "RoveBoard_TivaTM4C1294NCPDT.h"
 #include "RoveComm.h"
 
-#include "RoveJointControl/GenPwmPhaseHBridge.h"
-#include "RoveJointControl/Ma3Encoder12b.h"
-#include "RoveJointControl/PIAlgorithm.h"
-#include "RoveJointControl/RCContinuousServo.h"
-#include "RoveJointControl/RoveJointControl.h"
+#include "GenPwmPhaseHBridge.h"
+#include "Ma3Encoder12b.h"
+#include "PIAlgorithm.h"
+#include "RCContinuousServo.h"
+#include "RoveJointControl.h"
 
-#include "inc/hw_ints.h"
-#include "driverlib/interrupt.h"
-#include "driverlib/sysctl.h"
-#include "inc/hw_nvic.h"
-#include "inc/hw_types.h"
-#include "driverlib/watchdog.h"
+#include "tm4c1294ncpdt_API/tivaware/inc/hw_ints.h"
+#include "tm4c1294ncpdt_API/tivaware/driverlib/interrupt.h"
+#include "tm4c1294ncpdt_API/tivaware/driverlib/sysctl.h"
+#include "tm4c1294ncpdt_API/tivaware/inc/hw_nvic.h"
+#include "tm4c1294ncpdt_API/tivaware/inc/hw_types.h"
+#include "tm4c1294ncpdt_API/tivaware/driverlib/watchdog.h"
 
 //enum representing the different arm commands we can receive from base station.
 //There is a spreadsheet for these under rovesodrive under software architecture
@@ -103,7 +103,7 @@ const uint32_t WATCHDOG_TIMEOUT_US = 1000000; //the amount of microseconds that 
 const uint8_t IP_ADDRESS [4] = {192, 168, 1, 131};
 const uint8_t ArmJointCount = 5;
 const uint8_t IKArgCount = 5;
-float Fcpu = 120000000;
+
 const int BaseMaxSpeed = 1000;
 const int BaseRampUp = 60;
 const int BaseRampDown = 150;
@@ -111,6 +111,11 @@ const int ElbowRampUp = 250;
 const int ElbowRampDown = 250;
 const int WristRampUp = 200;
 const int WristRampDown = 200;
+
+const int ElbowKpp = 10;
+const int ElbowKip = 1;
+const int ElbowKpv = 10;
+const int ElbowKiv = 1;
 
 const int ElbowKp = 200;
 const int ElbowKi = 50;
@@ -193,6 +198,7 @@ const float CURRENT_SENSOR_RATIO = .066; //current sensor ratio of outputted sig
 const float CURRENT_LIMIT = 18; //actual limit we want is 17, but because the calculations are just an estimate we overshoot it slightly for manual checks
 const float VCC = 3.3; //usually the V input is 3.3V
 const float PI_TIMESLICE_SECONDS = .04;
+const float PIV_TIMESLICE_SECONDS = .010;
 
 const float ElbowLength = 0;
 const float BaseLength = 0;

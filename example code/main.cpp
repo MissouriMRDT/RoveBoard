@@ -1,14 +1,27 @@
 #include "main.h"
+#include "VelocityDeriver.h"
+#include "PIVConverter.h"
+#include "stdio.h"
 
-Ma3Encoder12b joint1Encoder(readModule4, ENCODER1_READING_PIN);
-Ma3Encoder12b joint2Encoder(readModule1, ENCODER2_READING_PIN);
-Ma3Encoder12b joint3Encoder(readModule5, ENCODER3_READING_PIN);
-Ma3Encoder12b joint5Encoder(readModule2, ENCODER5_READING_PIN);
+Ma3Encoder12b joint1Encoder(ReadModule4, ENCODER1_READING_PIN);
+Ma3Encoder12b joint2Encoder(ReadModule1, ENCODER2_READING_PIN);
+Ma3Encoder12b joint3Encoder(ReadModule5, ENCODER3_READING_PIN);
+Ma3Encoder12b joint5Encoder(ReadModule2, ENCODER5_READING_PIN);
+
+VelocityDeriver joint1Vel(&joint1Encoder, .9);
+VelocityDeriver joint2Vel(&joint2Encoder, .9);
+VelocityDeriver joint3Vel(&joint3Encoder, .9);
+VelocityDeriver joint5Vel(&joint5Encoder, .9);
 
 PIAlgorithm joint1Alg(BaseRotateKp,BaseRotateKi,PI_TIMESLICE_SECONDS, &joint1Encoder);
 PIAlgorithm joint2Alg(BaseTiltKp,BaseTiltKi,PI_TIMESLICE_SECONDS, &joint2Encoder);
 PIAlgorithm joint3Alg(ElbowKp,ElbowKi,PI_TIMESLICE_SECONDS, &joint3Encoder, ElbowMinMag);
 PIAlgorithm joint5Alg(WristTiltKp,WristTiltKi,PI_TIMESLICE_SECONDS, &joint5Encoder, WristTiltMinMag);
+
+PIVConverter joint1PIV(BaseRotateKp, BaseRotateKi, BaseRotateKp, BaseRotateKi, PIV_TIMESLICE_SECONDS, &joint1Encoder, &joint1Vel);
+PIVConverter joint2PIV(BaseTiltKp, BaseTiltKi, BaseTiltKp, BaseTiltKi, PIV_TIMESLICE_SECONDS, &joint2Encoder, &joint2Vel);
+PIVConverter joint3PIV(1, 0, 1, 0, PIV_TIMESLICE_SECONDS, &joint3Encoder, &joint3Vel);
+PIVConverter joint5PIV(WristTiltKp, WristTiltKi, WristTiltKp, WristTiltKi, PIV_TIMESLICE_SECONDS, &joint5Encoder, &joint5Vel);
 
 GenPwmPhaseHBridge dev1(PwmGenerator2, MOT1_PWN_PIN, HBRIDGE1_PHASE_PIN, HBRIDGE1_NSLEEP_PIN, true, false);
 GenPwmPhaseHBridge dev2(PwmGenerator1, MOT2_PWN_PIN, HBRIDGE2_PHASE_PIN, HBRIDGE2_NSLEEP_PIN, true, true);
@@ -67,7 +80,7 @@ void init()
   //when it cycles back around the overall timeslice will have passed
   //Update: 4 controls are now used, but the setup still works just fine by firing off 5 times per overall timeslice and
   //changing it would require modifying the interrupt as well, so it's staying the way it is
-  timer7Handle = setupTimer(Timer7, TimerPeriodicInterrupt, (PI_TIMESLICE_SECONDS/5.0) * 1000000.0);
+  timer7Handle = setupTimer(Timer7, TimerPeriodicInterrupt, (PIV_TIMESLICE_SECONDS/1.0) * 1000000.0);
   attachTimerInterrupt(timer7Handle, &closedLoopUpdateHandler);
 
   joint1Alg.setDeadband(BaseRotateDeadband);
@@ -107,13 +120,12 @@ int main()
   init();
   uint16_t commandId = 0;
   size_t commandSize = 0;
-  char commandData[250];
+  char commandData[20];
   CommandResult result;
 
   while(1)
   {
     roveComm_GetMsg(&commandId, &commandSize, commandData);
-
     if(commandId != 0) //returns commandId == 0 if it didn't get any message
     {
       restartWatchdog(WATCHDOG_TIMEOUT_US); //reset watchdog timer since we received a command
@@ -275,7 +287,7 @@ CommandResult masterPowerSet(bool enable)
   }
   else
   {
-      digitalPinWrite(POWER_LINE_CONTROL_PIN, 0);
+    digitalPinWrite(POWER_LINE_CONTROL_PIN, 0);
   }
 
   return Success;
@@ -642,10 +654,15 @@ CommandResult switchToClosedLoop()
 
   if(initialized)
   {
-    joint1.switchModules(InputPosition, &joint1Alg);
+    /*joint1.switchModules(InputPosition, &joint1Alg);
     joint2.switchModules(InputPosition, &joint2Alg);
     joint3.switchModules(InputPosition, &joint3Alg);
-    joint5.switchModules(InputPosition, &joint5Alg);
+    joint5.switchModules(InputPosition, &joint5Alg);*/
+
+    joint1.switchModules(InputPosition, &joint1PIV);
+    joint2.switchModules(InputPosition, &joint2PIV);
+    joint3.switchModules(InputPosition, &joint3PIV);
+    joint5.switchModules(InputPosition, &joint5PIV);
 
     //enable closed loop interrupts, which will begin to move the arm towards its set destinations
     startTimer(timer7Handle);
@@ -659,7 +676,7 @@ CommandResult switchToClosedLoop()
 void initWatchdog(uint32_t timeout_us)
 {
   watchdogUsed = true;
-  uint32_t load = Fcpu * (timeout_us/1000000.0); // clock cycle (120 MHz cycle/second) * (microsecond timeout/10000000 to convert it to seconds) = cycles till the timeout passes
+  uint32_t load = getCpuClockFreq() * (timeout_us/1000000.0); // clock cycle (120 MHz cycle/second) * (microsecond timeout/10000000 to convert it to seconds) = cycles till the timeout passes
   load /=2; //watchdog resets after two timeouts
 
   //
@@ -701,7 +718,7 @@ void restartWatchdog(uint32_t timeout_us)
     return;
   if(WatchdogRunning(WATCHDOG0_BASE))
   {
-    uint32_t load = Fcpu * (timeout_us/1000000.0); // clock cycle (120 MHz cycle/second) * (microsecond timeout/10000000 to convert it to seconds) = cycles till the timeout passes
+    uint32_t load = getCpuClockFreq() * (timeout_us/1000000.0); // clock cycle (120 MHz cycle/second) * (microsecond timeout/10000000 to convert it to seconds) = cycles till the timeout passes
     load /=2; //watchdog resets after two timeouts
 
     WatchdogReloadSet(WATCHDOG0_BASE, load);
@@ -806,14 +823,14 @@ float negativeDegreeCorrection(float correctThis)
 //on a consistent timeslice for its algorithm to calculate properly.
 void closedLoopUpdateHandler()
 {
-  static int jointUpdated = 1;
+  static int jointUpdated = 3;
   restartWatchdog(WATCHDOG_TIMEOUT_US);
 
-  jointUpdated += 1;
-  if(jointUpdated > 5)
+  //jointUpdated += 1;
+  /*if(jointUpdated > 5)
   {
     jointUpdated = 1;
-  }
+  }*/
   if(jointUpdated == 1)
   {
     //joint1.runOutputControl(joint1Destination);

@@ -1,5 +1,4 @@
 #include "Ma3Encoder12b.h"
-#include "RoveBoard.h"
 
 static const int PWM_READ_MAX = 4097;
 static const int PWM_READ_MIN = 1;
@@ -35,15 +34,19 @@ long Ma3Encoder12b::getFeedback()
   
   //set the relative angle, and account for any overflow due to the calculations
   long relativeAngle = absoluteAngle+offsetAngle;
-  if(relativeAngle > POS_MAX)
+  if(relativeAngle > (long)POS_MAX) //cast to long as math screws up if it doesn't
   {
     relativeAngle -= (POS_MAX-POS_MIN); 
   }
-  else if(relativeAngle < POS_MIN)
+  else if(relativeAngle < (long)POS_MIN)
   {
     relativeAngle += (POS_MAX-POS_MIN);
   }
   
+  //truncate off the accuracy from .1 degrees down, since these are only accurate to .1 degree
+  relativeAngle /= (POS_TO_DEGREES / 10);
+  relativeAngle *= (POS_TO_DEGREES / 10);
+
   return(relativeAngle);
 }
 
