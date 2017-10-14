@@ -15,18 +15,18 @@
 #define PART_TM4C1294NCPDT
 #endif
 
-#include "utilities/RoveUtilities.h"
-#include "utilities/Debug.h"
-#include "tm4c1294ncpdt/Clocking/Clocking_TivaTM4C1294NCPDT.h"
-#include "tm4c1294ncpdt/DigitalPin/DigitalPin_TivaTM4C1294NCPDT.h"
-#include "tm4c1294ncpdt/RovePwmRead/RovePwmRead_TivaTM4C1294NCPDT.h"
-#include "tm4c1294ncpdt/RovePwmWrite/RovePwmWrite_TivaTM4C1294NCPDT.h"
-#include "tm4c1294ncpdt/RoveEthernet/RoveEthernet_TivaTM4C1294NCPDT.h"
-#include "tm4c1294ncpdt/RovePinMap_TivaTM4C1294NCPDT.h"
-#include "tm4c1294ncpdt/SysInit/SysInit_TivaTM4C1294NCPDT.h"
-#include "tm4c1294ncpdt/RoveTimer/RoveTimer_TivaTM4C1294NCPDT.h"
-#include "tm4c1294ncpdt/RoveUart/RoveUart_TivaTM4C1294NCPDT.h"
-#include "tm4c1294ncpdt/RoveI2C/RoveI2C_TivaTM4C1294NCPDT.h"
+#include "supportingUtilities/RoveUtilities.h"
+#include "supportingUtilities/Debug.h"
+#include "tm4c1294ncpdt_API/Clocking/Clocking_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/DigitalPin/DigitalPin_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/RovePwmRead/RovePwmRead_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/RovePwmWrite/RovePwmWrite_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/RoveEthernet/RoveEthernet_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/RovePinMap_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/SysInit/SysInit_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/RoveTimer/RoveTimer_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/RoveUart/RoveUart_TivaTm4c1294NCPDT.h"
+#include "tm4c1294ncpdt_API/RoveI2C/RoveI2C_TivaTM4C1294NCPDT.h"
 
 static int dummySoThisRunsBeforeMain = (initSystem(), 0);
 
