@@ -2,11 +2,11 @@
 #include "supportingUtilities/Debug.h"
 #include "RovePwmWrite_TivaTM4C1294NCPDT.h"
 #include "../RovePinMap_TivaTM4C1294NCPDT.h"
-#include "driverlib/pin_map.h"
-#include "inc/hw_memmap.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/gpio.h"
-#include "driverlib/pwm.h"
+#include "../tivaware/driverlib/pin_map.h"
+#include "../tivaware/inc/hw_memmap.h"
+#include "../tivaware/driverlib/sysctl.h"
+#include "../tivaware/driverlib/gpio.h"
+#include "../tivaware/driverlib/pwm.h"
 
 
 static const float DEFAULT_WAVE_FREQ = 490.0;//the default pwm frequency if none specified

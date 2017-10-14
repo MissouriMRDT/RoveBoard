@@ -7,11 +7,11 @@
 
 #include "RoveTimer_TivaTM4C1294NCPDT.h"
 #include "supportingUtilities/Debug.h"
-#include "driverlib/timer.h"
-#include "inc/hw_memmap.h"
-#include "driverlib/interrupt.h"
-#include "driverlib/sysctl.h"
-#include "inc/hw_ints.h"
+#include "../tivaware/driverlib/timer.h"
+#include "../tivaware/inc/hw_memmap.h"
+#include "../tivaware/driverlib/interrupt.h"
+#include "../tivaware/driverlib/sysctl.h"
+#include "../tivaware/inc/hw_ints.h"
 
 const uint32_t F_PIOSC = 16000000; //speed of the internal precision clock is 16Mhz
 

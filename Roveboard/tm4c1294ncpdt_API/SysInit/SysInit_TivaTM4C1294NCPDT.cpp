@@ -1,8 +1,8 @@
 #include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
 #include "SysInit_TivaTM4C1294NCPDT.h"
-#include "driverlib/rom.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/fpu.h"
+#include "../tivaware/driverlib/rom.h"
+#include "../tivaware/driverlib/sysctl.h"
+#include "../tivaware/driverlib/fpu.h"
 
 static bool initialized = false;
 

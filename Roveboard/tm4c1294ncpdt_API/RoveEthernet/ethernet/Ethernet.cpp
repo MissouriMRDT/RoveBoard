@@ -1,17 +1,17 @@
 #include <String.h>
-#include <inc/hw_ints.h>
+#include "../../tivaware/inc/hw_ints.h"
 #include "../../Clocking/Clocking_TivaTM4C1294NCPDT.h"
 #include "Ethernet.h"
 #include "lwip/inet.h"
-#include "inc/hw_flash.h"
-#include "inc/hw_memmap.h"
+#include "../../tivaware/inc/hw_flash.h"
+#include "../../tivaware/inc/hw_memmap.h"
 #include "../../RovePinMap_TivaTM4C1294NCPDT.h"
-#include "driverlib/rom.h"
-#include "driverlib/flash.h"
-#include "driverlib/interrupt.h"
-#include "driverlib/gpio.h"
-#include "driverlib/pin_map.h"
-#include "driverlib/emac.h"
+#include "../../tivaware/driverlib/rom.h"
+#include "../../tivaware/driverlib/flash.h"
+#include "../../tivaware/driverlib/interrupt.h"
+#include "../../tivaware/driverlib/gpio.h"
+#include "../../tivaware/driverlib/pin_map.h"
+#include "../../tivaware/driverlib/emac.h"
 
 extern void lwIPEthernetIntHandler(void);
 

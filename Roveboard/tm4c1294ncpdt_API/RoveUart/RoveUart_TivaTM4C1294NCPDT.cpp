@@ -1,7 +1,7 @@
 // RoveBoard.cpp for Energia
-#include <supportingUtilities/Debug.h>
 // Author: Gbenga Osibodu
 
+#include <supportingUtilities/Debug.h>
 #include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
 #include "../RoveUart/HardwareSerial.h"
 #include "RoveUart_TivaTm4c1294NCPDT.h"

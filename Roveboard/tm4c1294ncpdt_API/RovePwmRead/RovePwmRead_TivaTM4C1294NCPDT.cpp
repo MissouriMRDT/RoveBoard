@@ -1,16 +1,16 @@
 #include "RovePwmRead_TivaTM4C1294NCPDT.h"
 #include "supportingUtilities/Debug.h"
 #include "../RovePinMap_TivaTM4C1294NCPDT.h"
-#include "inc/hw_ints.h" //hardware constants for interrupts
-#include "inc/hw_memmap.h" //hardware memory for things such as peripheral device base address
-#include "inc/hw_types.h" //hardware macros such as HWREG which is a macro used to access registers
-#include "inc/hw_timer.h" //hardware constants for timers
-#include "driverlib/gpio.h"
-#include "driverlib/interrupt.h"
-#include "driverlib/pin_map.h" //hardware memory map for things such as alternate pin mode constants, such as timer1 module's base address. No idea why it's not in inc/
-#include "driverlib/rom.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/timer.h"
+#include "../tivaware/inc/hw_ints.h" //hardware constants for interrupts
+#include "../tivaware/inc/hw_memmap.h" //hardware memory for things such as peripheral device base address
+#include "../tivaware/inc/hw_types.h" //hardware macros such as HWREG which is a macro used to access registers
+#include "../tivaware/inc/hw_timer.h" //hardware constants for timers
+#include "../tivaware/driverlib/gpio.h"
+#include "../tivaware/driverlib/interrupt.h"
+#include "../tivaware/driverlib/pin_map.h" //hardware memory map for things such as alternate pin mode constants, such as timer1 module's base address. No idea why it's not in inc/
+#include "../tivaware/driverlib/rom.h"
+#include "../tivaware/driverlib/sysctl.h"
+#include "../tivaware/driverlib/timer.h"
 
 /* Algorithm description:
    How this works is that a timer module is set up so that its 

@@ -117,13 +117,13 @@ extern void lwIPHostGetTime(u32_t *time_s, u32_t *time_ns);
  */
 #include <stdint.h>
 #include <stdbool.h>
-#include "inc/hw_emac.h"
-#include "inc/hw_ints.h"
-#include "inc/hw_memmap.h"
-#include "inc/hw_types.h"
-#include "driverlib/emac.h"
-#include "driverlib/interrupt.h"
-#include "driverlib/sysctl.h"
+#include "../../../tivaware/inc/hw_emac.h"
+#include "../../../tivaware/inc/hw_ints.h"
+#include "../../../tivaware/inc/hw_memmap.h"
+#include "../../../tivaware/inc/hw_types.h"
+#include "../../../tivaware/driverlib/emac.h"
+#include "../../../tivaware/driverlib/interrupt.h"
+#include "../../../tivaware/driverlib/sysctl.h"
 
 /* Define those to better describe your network interface. */
 #define IFNAME0 't'

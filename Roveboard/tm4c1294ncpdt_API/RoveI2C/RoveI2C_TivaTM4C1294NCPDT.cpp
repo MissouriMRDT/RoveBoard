@@ -2,14 +2,14 @@
 #include "supportingUtilities/Debug.h"
 #include "../RovePinMap_TivaTM4C1294NCPDT.h"
 #include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
-#include "driverlib/pin_map.h"
-#include "inc/hw_i2c.h"
-#include "inc/hw_memmap.h"
-#include "inc/hw_types.h"
-#include "inc/hw_gpio.h"
-#include "driverlib/i2c.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/gpio.h"
+#include "../tivaware/driverlib/pin_map.h"
+#include "../tivaware/inc/hw_i2c.h"
+#include "../tivaware/inc/hw_memmap.h"
+#include "../tivaware/inc/hw_types.h"
+#include "../tivaware/inc/hw_gpio.h"
+#include "../tivaware/driverlib/i2c.h"
+#include "../tivaware/driverlib/sysctl.h"
+#include "../tivaware/driverlib/gpio.h"
 
 static void masterInitExpClk(uint32_t ui32Base, RoveI2C_Speed speed);
 static void initVerifyInput(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin);

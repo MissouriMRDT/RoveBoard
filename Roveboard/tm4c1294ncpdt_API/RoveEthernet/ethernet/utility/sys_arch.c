@@ -49,10 +49,10 @@
 /* TivaWare header files required for this interface driver. */
 #include <stdint.h>
 #include <stdbool.h>
-#include "inc/hw_types.h"
-#include "driverlib/interrupt.h"
-#include "driverlib/rom.h"
-#include "driverlib/rom_map.h"
+#include "../../../tivaware/inc/hw_types.h"
+#include "../../../tivaware/driverlib/interrupt.h"
+#include "../../../tivaware/driverlib/rom.h"
+#include "../../../tivaware/driverlib/rom_map.h"
 
 /**
  * This global is defined in lwiplib.c and contains a count of the number of

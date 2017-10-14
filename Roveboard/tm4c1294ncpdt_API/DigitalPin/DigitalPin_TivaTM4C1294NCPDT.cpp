@@ -1,8 +1,8 @@
 #include <tm4c1294ncpdt_API/DigitalPin/DigitalPin_TivaTM4C1294NCPDT.h>
-#include "driverlib/gpio.h"
-#include "driverlib/sysctl.h"
-#include "inc/hw_gpio.h"
-#include "inc/hw_memmap.h"
+#include "../tivaware/driverlib/gpio.h"
+#include "../tivaware/driverlib/sysctl.h"
+#include "../tivaware/inc/hw_gpio.h"
+#include "../tivaware/inc/hw_memmap.h"
 
 static const uint8_t MaxPower = MA_12;
 static const uint8_t MinPower = MA_2;

@@ -3,9 +3,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "inc/hw_memmap.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/gpio.h"
+#include "tivaware/inc/hw_memmap.h"
+#include "tivaware/driverlib/sysctl.h"
+#include "tivaware/driverlib/gpio.h"
 
 // Pin names based on the 
 // board's silkscreen
