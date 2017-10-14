@@ -22,7 +22,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "standardAPI_Prototypes/RoveEthernet.h"
+#include "prototype_API/RoveEthernet.h"
 
 #define ROVE_IP_ADDR_NONE INADDR_NONE
 

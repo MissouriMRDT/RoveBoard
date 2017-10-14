@@ -22,7 +22,7 @@ Be sure to read the wiki for more helpful things such as visual pinmaps.
   - The other roveboard files like `RoveBoard_TM4C1294NCPDT.h` return those functions and others that work specifically on the tm4c and define them. You need to include the roveboard for your specific microcontroller in your main.cpp file for everything to work.
 
 * The folders inside RoveBoard are split into three categories. 
-  - `standardAPI`, which contain files that prototype the standardized functions for each feature, and the typenames and constants associated with the features.
+  - `prototype_API`, which contain files that prototype the standardized functions for each feature, and the typenames and constants associated with the features.
   - `supportingUtilities`, which contain supporting functions, macros, and classes that aren't device-specific so are there to be helpful to the entire framework 
   - lastly you'll see folders devoted to a specific processor like 'tm4c1294ncpdt_API'. Those folders contain the files that list and define the functions made for their processor, and what most users of RoveBoard will be interested in looking at.
 

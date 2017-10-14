@@ -36,7 +36,7 @@
 
 #include <stddef.h>
 
-#include "standardAPI_Prototypes/RoveUart.h"
+#include "prototype_API/RoveUart.h"
 
 //roveUartSettings arguments:
 //constants to set word length in transmission in bits
