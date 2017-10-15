@@ -22,6 +22,8 @@
 #include "prototype_API/RoveUart.h"
 #include "supportingUtilities/RoveUtilities.h"
 #include "supportingUtilities/Debug.h"
+#include "supportingUtilities/lightTrig.h"
+
 
 
 #endif /* ROVEBOARD_ROVEBOARD_H_ */
