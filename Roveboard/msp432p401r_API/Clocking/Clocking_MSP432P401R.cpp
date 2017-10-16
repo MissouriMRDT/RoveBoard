@@ -12,8 +12,8 @@
 #include "supportingUtilities/RoveUtilities.h"
 
 static void SysTickIntHandler();
-static bool needChangePowerStateFirst(uint32_t desiredCpuFreq, uint32_t desiredPeriphFreq);
-static void selectOptimalPowerState(uint32_t cpuFreq, uint32_t periphFreq);
+static bool needChangeVoltageStateFirst(uint32_t desiredCpuFreq, uint32_t desiredPeriphFreq);
+static void selectOptimalVoltageState(uint32_t cpuFreq, uint32_t periphFreq);
 static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet);
 
 static const uint16_t SystickIntPriority = 0x80;
@@ -22,6 +22,8 @@ static uint16_t SystickHz = 1000;
 
 #define HFXTCLK_MINIMUM (EXTERNAL_HIGH_FREQUENCY_CRYSTAL_FREQ / 128) //lowest clock divider is 128, so this is the minimum freq we can get on HFXT
 #define DCOCLK_MINIMUM (CS_getDCOFrequency() / 128)
+
+#define REFOCLK_FREQ (128000)
 
 #define CpuMaxFreq 48000000
 #define PeriphMaxFreq 24000000
@@ -48,6 +50,7 @@ void initSystemClocks()
                                                                            //aux and backup clocks default to LF external clock.
 
   MAP_CS_setDCOFrequency(3000000); //set DCO to default of 3 Mhz
+  MAP_CS_setReferenceOscillatorFrequency(CS_REFO_128KHZ); //set REFO to 128Khz since we already have the lfxt for ~37khz
 
   //
   //  SysTick is used for delay() and delayMicroseconds() and micros and millis
@@ -137,7 +140,7 @@ static void SysTickIntHandler(void)
   milliseconds++;
 }
 
-static bool needChangePowerStateFirst(uint32_t desiredCpuFreq, uint32_t desiredPeriphFreq)
+static bool needChangeVoltageStateFirst(uint32_t desiredCpuFreq, uint32_t desiredPeriphFreq)
 {
   uint32_t presentCpuFreq = MAP_CS_getMCLK();
   uint32_t presentPeriphFreq = MAP_CS_getHSMCLK();
@@ -156,7 +159,7 @@ static bool needChangePowerStateFirst(uint32_t desiredCpuFreq, uint32_t desiredP
   }
 }
 
-static void selectOptimalPowerState(uint32_t cpuFreq, uint32_t periphFreq)
+static void selectOptimalVoltageState(uint32_t cpuFreq, uint32_t periphFreq)
 {
   if(cpuFreq <= MinVoltageMode_CpuMaxFreq && periphFreq <= MinVoltageMode_PeriphMaxFreq)
   {
@@ -181,11 +184,18 @@ static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet)
   uint8_t i;
 
   //figure out what clock source we need to be using for the requested range
-  if(newFrequency < HFXTCLK_MINIMUM && newFrequency < DCOCLK_MINIMUM)
+  if(newFrequency <= REFOCLK_FREQ && newFrequency >= EXTERNAL_LOW_FREQUENCY_CRYSTAL_FREQ)
+  {
+    mainClockSourceFreq = REFOCLK_FREQ; //if we can use the refo or the lfxt, just use it instead of the others.
+    mainClockSource = CS_REFOCLK_SELECT;
+  }
+  else if(newFrequency <= EXTERNAL_LOW_FREQUENCY_CRYSTAL_FREQ)
   {
     mainClockSourceFreq = EXTERNAL_LOW_FREQUENCY_CRYSTAL_FREQ;
     mainClockSource = CS_LFXTCLK_SELECT;
   }
+
+  //wasn't compatible with one of the lower power clocks, try a higher one
   else if(newFrequency < HFXTCLK_MINIMUM && newFrequency >= DCOCLK_MINIMUM)
   {
     mainClockSourceFreq = CS_getDCOFrequency();
@@ -288,15 +298,15 @@ static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet)
 
   //configure clock to new setting, but be careful to make sure the power settings
   //will allow it. Either way, optimize power settings at the same time.
-  if(needChangePowerStateFirst(cpuFreq,periphFreq))
+  if(needChangeVoltageStateFirst(cpuFreq,periphFreq))
   {
-    selectOptimalPowerState(cpuFreq, periphFreq);
+    selectOptimalVoltageState(cpuFreq, periphFreq);
     MAP_CS_initClockSignal(clockToSet, mainClockSource, firmwareDivisor);
   }
   else
   {
     MAP_CS_initClockSignal(clockToSet, mainClockSource, firmwareDivisor);
-    selectOptimalPowerState(cpuFreq, periphFreq);
+    selectOptimalVoltageState(cpuFreq, periphFreq);
   }
 
   for(i = 0; i < 100; i++);

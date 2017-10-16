@@ -29,7 +29,6 @@ void forceLowFrequencyMode()
 {
   setCpuClockFreq(LowFreqMode_Freq);
   setPeriphClockFreq(LowFreqMode_Freq);
-
   MAP_PCM_setPowerMode(PCM_LF_MODE);
 }
 
