@@ -19,6 +19,7 @@
 #include "supportingUtilities/Debug.h"
 #include "msp432p401r_API/Clocking/Clocking_MSP432P401R.h"
 #include "msp432p401r_API/SysInit/SysInit_MSP432P401R.h"
+#include "msp432p401r_API/Power/Power_MSP432P401R.h"
 
 static int dummySoThisRunsBeforeMain = (initSystem(), 0);
 
