@@ -33,8 +33,8 @@ void initSystem()
   FLCTL->BANK0_RDCTL = FLCTL->BANK0_RDCTL | (FLCTL_BANK0_RDCTL_BUFD | FLCTL_BANK0_RDCTL_BUFI);
   FLCTL->BANK1_RDCTL = FLCTL->BANK1_RDCTL | (FLCTL_BANK1_RDCTL_BUFD | FLCTL_BANK1_RDCTL_BUFI);
 
-  CS->KEY = CS_KEY_VAL;                                  // Unlock CS module for register access
+  CS->KEY |= CS_KEY_VAL;                                  // Unlock CS module for register access
   initSystemClocks();
-  CS->KEY = 0;
+  BITBAND_PERI(CS->KEY, CS_KEY_KEY_OFS) = 1;
 
 }

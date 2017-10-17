@@ -17,19 +17,19 @@
 
 bool useSwitchingPowerSource()
 {
-  return MAP_PCM_setPowerMode(PCM_DCDC_MODE);
+  return PCM_setPowerMode(PCM_DCDC_MODE);
 }
 
 bool useLDOPowerSource()
 {
-  return MAP_PCM_setPowerMode(PCM_LDO_MODE);
+  return PCM_setPowerMode(PCM_LDO_MODE);
 }
 
 void forceLowFrequencyMode()
 {
   setCpuClockFreq(LowFreqMode_Freq);
   setPeriphClockFreq(LowFreqMode_Freq);
-  MAP_PCM_setPowerMode(PCM_LF_MODE);
+  PCM_setPowerMode(PCM_LF_MODE);
 }
 
 void forceLowVoltageMode()

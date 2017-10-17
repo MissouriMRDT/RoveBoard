@@ -20,6 +20,9 @@ static const uint16_t SystickIntPriority = 0x80;
 static uint32_t milliseconds = 0;
 static uint16_t SystickHz = 1000;
 
+static bool hfxtGood = false;
+static bool lfxtGood = false;
+
 #define HFXTCLK_MINIMUM (EXTERNAL_HIGH_FREQUENCY_CRYSTAL_FREQ / 128) //lowest clock divider is 128, so this is the minimum freq we can get on HFXT
 #define DCOCLK_MINIMUM (CS_getDCOFrequency() / 128)
 
@@ -31,36 +34,56 @@ static uint16_t SystickHz = 1000;
 
 void initSystemClocks()
 {
+  int i;
+
   // Configuring pins for peripheral/crystal usage
-  MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ,GPIO_PIN3 | GPIO_PIN2, GPIO_PRIMARY_MODULE_FUNCTION);
-  MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN0 | GPIO_PIN1, GPIO_PRIMARY_MODULE_FUNCTION);
+  GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN3 | GPIO_PIN2, GPIO_PRIMARY_MODULE_FUNCTION);
+  GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN0 | GPIO_PIN1, GPIO_PRIMARY_MODULE_FUNCTION);
 
   //set the internal reference for what the frequency fo the external crystals are
   CS_setExternalClockSourceFrequency(EXTERNAL_LOW_FREQUENCY_CRYSTAL_FREQ, EXTERNAL_HIGH_FREQUENCY_CRYSTAL_FREQ);
 
   // Starting HFXT and LFXT in non-bypass mode without a timeout. Before we start we have to change VCORE to 1 to support the 48MHz frequency
-  MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
-  CS_startHFXT(false);
-  CS_startLFXT(CS_LFXT_DRIVE3);
+  PCM_setCoreVoltageLevel(PCM_VCORE1);
+  hfxtGood = CS_startHFXTWithTimeout(false, 1000);
+  lfxtGood = CS_startLFXTWithTimeout(CS_LFXT_DRIVE0, 1000);
 
   // Initializing clocks
-  MAP_CS_initClockSignal(CS_MCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1); //main clock set to use HF external clock, 48Mhz which is its max. Used by CPU
-  MAP_CS_initClockSignal(CS_HSMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_2); //sub-main clock set to use HF external clock, 24Mhz which is its max. Used by periphs.
-                                                                           //low-speed submain uses same clock as sub-main. Used by periphs
-                                                                           //aux and backup clocks default to LF external clock.
-
-  MAP_CS_setDCOFrequency(3000000); //set DCO to default of 3 Mhz
-  MAP_CS_setReferenceOscillatorFrequency(CS_REFO_128KHZ); //set REFO to 128Khz since we already have the lfxt for ~37khz
+  //main clock set to use dco clock or HF external clock, 48Mhz which is its max. Used by CPU
+  //sub-main clock set to use HF external clock or dco clock, 24Mhz which is its max. Used by periphs.
+  //low-speed submain uses same clock as sub-main. Used by periphs
+  //aux and backup clocks default to LF external clock.
+  //set REFO to 128Khz since we already have the lfxt for ~37khz. Or if lfxt wasn't initialized, keep it at 128khz anyway since
+  //it can be easily divided into 37khz if we want
+  CS_setReferenceOscillatorFrequency(CS_REFO_128KHZ);
+  if(hfxtGood == false)
+  {
+    CS_setDCOFrequency(DCOMaxFreq);
+    CS_initClockSignal(CS_MCLK, CS_DCOCLK_SELECT, CS_CLOCK_DIVIDER_1);
+    CS_initClockSignal(CS_HSMCLK, CS_DCOCLK_SELECT, CS_CLOCK_DIVIDER_2);
+  }
+  else
+  {
+    CS_setDCOFrequency(3000000); //set DCO to default of 3 Mhz
+    CS_initClockSignal(CS_MCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1);
+    CS_initClockSignal(CS_HSMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_2);
+  }
+  if(!lfxtGood)
+  {
+    CS_initClockSignal(CS_ACLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_2);
+    CS_initClockSignal(CS_BCLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_2);
+  }
+  for(i = 0; i < 10000; i++);
 
   //
   //  SysTick is used for delay() and delayMicroseconds() and micros and millis
   //
-  MAP_SysTick_enableModule();
-  MAP_SysTick_setPeriod(CS_getMCLK() / 1000); //uses MCLK. Hz (ticks/s) * 1 ms = ticks needed to make it time out in 1 millisecond
-  MAP_SysTick_enableInterrupt();
-  MAP_SysTick_registerInterrupt(SysTickIntHandler);
-  MAP_Interrupt_setPriority(FAULT_SYSTICK, SystickIntPriority);
-  MAP_Interrupt_enableMaster();
+  SysTick_enableModule();
+  SysTick_setPeriod(CS_getMCLK() / 1000); //uses MCLK. Hz (ticks/s) * 1 ms = ticks needed to make it time out in 1 millisecond
+  SysTick_registerInterrupt(SysTickIntHandler);
+  Interrupt_setPriority(FAULT_SYSTICK, SystickIntPriority);
+  SysTick_enableInterrupt();
+  Interrupt_enableMaster();
 
 }
 
@@ -88,8 +111,8 @@ uint32_t setProgrammableClockSourceFreq(uint32_t newFrequency)
   {
     newFrequency = DCOMaxFreq;
   }
-  MAP_CS_setDCOFrequency (newFrequency);
-  return MAP_CS_getDCOFrequency();
+  CS_setDCOFrequency (newFrequency);
+  return CS_getDCOFrequency();
 }
 
 uint32_t getCpuClockFreq()
@@ -104,8 +127,16 @@ uint32_t getPeriphClockFreq()
 
 uint32_t micros(void)
 {
-  //micros so far + system ticks since last millisecond rollover (System clock ticks downward) / ticks it takes for 1 microsecond.
-  return (milliseconds * 1000) + ( ((CS_getMCLK() / SystickHz) - MAP_SysTick_getValue()) / (((float)CS_getMCLK())/1000000.0));
+  uint32_t microSeconds;
+  uint32_t ticksSinceRollover;
+
+  microSeconds = milliseconds * 1000;
+
+  ticksSinceRollover = (SysTick_getPeriod() - SysTick_getValue()) & 0xFFFFFF; //24 bit counter, counts downward.
+  microSeconds += ((ticksSinceRollover * 1000)/ SysTick_getPeriod()); //(ticks / ticks per millisecond) * 1000 to get microseconds
+
+  return microSeconds;
+
 }
 
 uint32_t millis(void)
@@ -116,34 +147,42 @@ uint32_t millis(void)
 void delayMicroseconds(uint32_t microsToDelay)
 {
   // Systick timer rolls over every 1000000/SYSTICKHZ microseconds
-  if (microsToDelay > (1000000UL / SystickHz - 1)) {
+  if(microsToDelay >= 1000){
     delay(microsToDelay / 1000);  // delay milliseconds
     microsToDelay = microsToDelay % 1000;     // handle remainder of delay
   };
 
-  uint32_t timeStart = micros();
+  // 24 bit timer - mask off undefined bits
+  unsigned long startTime = SysTick_getValue();
 
-  while(microsToDelay < (micros() - timeStart));
+  unsigned long ticks = microsToDelay * (CS_getMCLK()/1000000UL);
+  volatile unsigned long elapsedTime;
+
+  if (ticks > startTime) {
+    ticks = (ticks + (0xFFFFFF - (CS_getMCLK() / SystickHz))) & 0xFFFFFF;
+  }
+
+  do {
+    elapsedTime = (startTime-SysTick_getValue()) & 0xFFFFFF;
+  } while(elapsedTime <= ticks);
 }
 
 void delay(uint32_t millis)
 {
-  uint32_t i;
-  for(i = 0; i < millis*2; i++)
-  {
-    delayMicroseconds(500);
-  }
+  uint32_t startTime = milliseconds;
+  while(millis > (milliseconds - startTime));
 }
 
 static void SysTickIntHandler(void)
 {
+
   milliseconds++;
 }
 
 static bool needChangeVoltageStateFirst(uint32_t desiredCpuFreq, uint32_t desiredPeriphFreq)
 {
-  uint32_t presentCpuFreq = MAP_CS_getMCLK();
-  uint32_t presentPeriphFreq = MAP_CS_getHSMCLK();
+  uint32_t presentCpuFreq = CS_getMCLK();
+  uint32_t presentPeriphFreq = CS_getHSMCLK();
 
   //If either clock is operating in the range of minimum power mode but is about to transition to the range used by high power mode, then
   //we need to change power states first.
@@ -163,11 +202,11 @@ static void selectOptimalVoltageState(uint32_t cpuFreq, uint32_t periphFreq)
 {
   if(cpuFreq <= MinVoltageMode_CpuMaxFreq && periphFreq <= MinVoltageMode_PeriphMaxFreq)
   {
-    MAP_PCM_setCoreVoltageLevel(PCM_VCORE0);
+    PCM_setCoreVoltageLevel(PCM_VCORE0);
   }
   else
   {
-    MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
+    PCM_setCoreVoltageLevel(PCM_VCORE1);
   }
 }
 
@@ -189,13 +228,18 @@ static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet)
     mainClockSourceFreq = REFOCLK_FREQ; //if we can use the refo or the lfxt, just use it instead of the others.
     mainClockSource = CS_REFOCLK_SELECT;
   }
-  else if(newFrequency <= EXTERNAL_LOW_FREQUENCY_CRYSTAL_FREQ)
+  else if((newFrequency <= EXTERNAL_LOW_FREQUENCY_CRYSTAL_FREQ) && lfxtGood)
   {
     mainClockSourceFreq = EXTERNAL_LOW_FREQUENCY_CRYSTAL_FREQ;
     mainClockSource = CS_LFXTCLK_SELECT;
   }
 
   //wasn't compatible with one of the lower power clocks, try a higher one
+  if(hfxtGood == false)
+  {
+    mainClockSourceFreq = CS_getDCOFrequency();
+    mainClockSource = CS_DCOCLK_SELECT;
+  }
   else if(newFrequency < HFXTCLK_MINIMUM && newFrequency >= DCOCLK_MINIMUM)
   {
     mainClockSourceFreq = CS_getDCOFrequency();
@@ -288,11 +332,11 @@ static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet)
   if(clockToSet == CS_MCLK)
   {
     cpuFreq = mainClockSourceFreq / literalDivisor;
-    periphFreq = MAP_CS_getHSMCLK();
+    periphFreq = CS_getHSMCLK();
   }
   else if(clockToSet == CS_HSMCLK)
   {
-    cpuFreq = MAP_CS_getMCLK();
+    cpuFreq = CS_getMCLK();
     periphFreq = mainClockSourceFreq / literalDivisor;
   }
 
@@ -301,11 +345,11 @@ static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet)
   if(needChangeVoltageStateFirst(cpuFreq,periphFreq))
   {
     selectOptimalVoltageState(cpuFreq, periphFreq);
-    MAP_CS_initClockSignal(clockToSet, mainClockSource, firmwareDivisor);
+    CS_initClockSignal(clockToSet, mainClockSource, firmwareDivisor);
   }
   else
   {
-    MAP_CS_initClockSignal(clockToSet, mainClockSource, firmwareDivisor);
+    CS_initClockSignal(clockToSet, mainClockSource, firmwareDivisor);
     selectOptimalVoltageState(cpuFreq, periphFreq);
   }
 
@@ -313,7 +357,7 @@ static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet)
 
   if(clockToSet == CS_MCLK)
   {
-    MAP_SysTick_setPeriod(CS_getMCLK() / 1000); //uses MCLK. Hz (ticks/s) * 1 ms = ticks needed to make it time out in 1 millisecond
+    SysTick_setPeriod(CS_getMCLK() / 1000); //uses MCLK. Hz (ticks/s) * 1 ms = ticks needed to make it time out in 1 millisecond
     return CS_getMCLK();
   }
   else if(clockToSet == CS_HSMCLK)
