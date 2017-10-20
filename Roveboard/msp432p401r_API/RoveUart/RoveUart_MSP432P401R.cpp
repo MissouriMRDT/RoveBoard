@@ -12,7 +12,7 @@
 #include "../RovePinMap_MSP432P401R.h"
 #include "../../supportingUtilities/Debug.h"
 
-static HardwareSerial* uartArray[2] = {&Serial , &Serial1};
+static HardwareSerial* uartArray[] = {&Serial , &Serial1, &Serial2, &Serial3};
 static const char MaxBytesPerWrite = 16;
 
 static bool validatePins(char module, char txPin, char rxPin)
@@ -30,6 +30,26 @@ static bool validatePins(char module, char txPin, char rxPin)
       }
 
     case uartModule1:
+      if(rxPin == P2_2 && txPin == P2_3)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+
+    case uartModule2:
+      if(rxPin == P3_2 && txPin == P3_3)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+
+    case uartModule3:
       if(rxPin == P9_6 && txPin == P9_7)
       {
         return true;
@@ -45,7 +65,7 @@ static bool validatePins(char module, char txPin, char rxPin)
 
 roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate, unsigned int txPin, unsigned int rxPin) {
 
-  if(uart_index > 1)
+  if(uart_index > 3)
   {
     debugFault("roveUartOpen: uart index is nonsense");
   }
@@ -166,6 +186,16 @@ roveUart_ERROR roveUartSettings(roveUART_Handle uart,unsigned int parityBits, un
   serial -> setOutputSettings(parityBits, stopBits);
 
   return ROVE_UART_ERROR_SUCCESS;
+}
+
+void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length)
+{
+
+}
+
+uint16_t roveUartGetBufferLength(roveUART_Handle uart)
+{
+
 }
 
 

@@ -235,7 +235,7 @@ static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet)
   }
 
   //wasn't compatible with one of the lower power clocks, try a higher one
-  if(hfxtGood == false)
+  else if(hfxtGood == false)
   {
     mainClockSourceFreq = CS_getDCOFrequency();
     mainClockSource = CS_DCOCLK_SELECT;

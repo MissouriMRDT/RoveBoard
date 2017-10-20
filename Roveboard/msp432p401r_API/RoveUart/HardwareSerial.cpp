@@ -28,9 +28,9 @@
 
 #define UART_BASE g_ulUARTBase[uartModule]
 
-static const unsigned long g_ulUARTBase[2] =
+static const unsigned long g_ulUARTBase[] =
 {
-  EUSCI_A0_BASE, EUSCI_A3_BASE
+  EUSCI_A0_BASE, EUSCI_A1_BASE, EUSCI_A2_BASE, EUSCI_A3_BASE
 };
 
 /////////// Constructors ////////////////////////////////////////////////////////////////
@@ -161,12 +161,19 @@ HardwareSerial::begin(unsigned long baud, uint8_t txPin, uint8_t rxPin)
   switch(UART_BASE)
   {
     case EUSCI_A0_BASE:
-    MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler0);
-    break;
+      MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler0);
+      break;
 
     case EUSCI_A1_BASE:
-    MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler1);
-    break;
+      MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler1);
+      break;
+
+    case EUSCI_A2_BASE:
+      MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler2);
+      break;
+  case EUSCI_A3_BASE:
+      MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler3);
+      break;
   }
 
   // Catch attempts to re-init this Serial instance by freeing old buffer first
@@ -192,6 +199,47 @@ HardwareSerial::begin(unsigned long baud, uint8_t txPin, uint8_t rxPin)
 
   int i;
   for(i = 0; i < 100; i++);
+}
+
+void HardwareSerial::setBufferSize(unsigned long buffSize)
+{
+  if(buffSize == 0)
+  {
+    return;
+  }
+
+  unsigned char* oldRxBuffer = rxBuffer;
+  unsigned char* oldTxBuffer = txBuffer;
+  unsigned long oldBuffSize = txBufferSize;
+
+  MAP_UART_disableInterrupt(UART_BASE, UART_INTERRUPTS);
+
+  txBuffer = new unsigned char [buffSize];
+  rxBuffer = new unsigned char [buffSize];
+
+  unsigned long i;
+  for(i = 0; i < oldBuffSize; i++)
+  {
+    if(i >= buffSize)
+    {
+      break;
+    }
+
+    rxBuffer[i] = oldRxBuffer[i];
+    txBuffer[i] = oldTxBuffer[i];
+  }
+
+  txBufferSize = buffSize;
+  rxBufferSize = buffSize;
+  delete oldRxBuffer;
+  delete oldTxBuffer;
+
+  MAP_UART_enableInterrupt(UART_BASE, UART_INTERRUPTS);
+}
+
+unsigned long HardwareSerial::getBufferSize()
+{
+  return txBufferSize; //rx, tx share same buff size
 }
 
 void HardwareSerial::end()
@@ -577,6 +625,20 @@ UARTIntHandler1(void)
   Serial1.UARTIntHandler();
 }
 
+void
+UARTIntHandler2(void)
+{
+  Serial2.UARTIntHandler();
+}
+
+void
+UARTIntHandler3(void)
+{
+  Serial3.UARTIntHandler();
+}
+
 
 HardwareSerial Serial;
 HardwareSerial Serial1(1);
+HardwareSerial Serial2(2);
+HardwareSerial Serial3(3);

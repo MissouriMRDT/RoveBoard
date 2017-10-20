@@ -24,6 +24,8 @@
 //uart index arguments
 #define uartModule0 0
 #define uartModule1 1
+#define uartModule2 2
+#define uartModule3 3
 
 roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate);
 roveUart_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, size_t bytes_to_write);
@@ -32,6 +34,20 @@ roveUart_ERROR roveUartReadNonBlocking(roveUART_Handle uart, void* read_buffer, 
 int roveUartAvailable(roveUART_Handle uart);
 int roveUartPeek(roveUART_Handle uart);
 roveUart_ERROR roveUartSettings(roveUART_Handle uart, unsigned int parityBits, unsigned int stopBits);
+
+
+//sets how many bytes the uart module is allowed to use up when saving received messages.
+//inputs: reference of a setup uart module from roveUartOpen, and new length of the buffer.
+//WARNING: If downsizing the buffer size from its previous size, any data that was currently sitting in the buffer outside of the
+//length of the new buffer will be lost
+void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length);
+
+//gets how many bytes the uart module is allowed to use up when saving received messages.
+//inputs: reference of a setup uart module from roveUartOpen, and new length of the buffer.
+//returns: roveUart receive buffer size
+//note: default size is 16 bytes
+uint16_t roveUartGetBufferLength(roveUART_Handle uart);
+
 
 
 

@@ -53,6 +53,8 @@ class HardwareSerial
     HardwareSerial(unsigned long);
     void begin(unsigned long, uint8_t, uint8_t);
     void end(void);
+    void setBufferSize(unsigned long);
+    unsigned long getBufferSize();
     int available(void);
     int peek(void);
     int read(void);
@@ -66,9 +68,13 @@ class HardwareSerial
 
 extern HardwareSerial Serial;
 extern HardwareSerial Serial1;
+extern HardwareSerial Serial2;
+extern HardwareSerial Serial3;
 
 extern "C" void UARTIntHandler0(void);
 extern "C" void UARTIntHandler1(void);
+extern "C" void UARTIntHandler2(void);
+extern "C" void UARTIntHandler3(void);
 
 #endif
 

@@ -25,11 +25,20 @@ bool useLDOPowerSource()
   return PCM_setPowerMode(PCM_LDO_MODE);
 }
 
-void forceLowFrequencyMode()
+void forceLowFrequencyMode(bool putInHighVoltageMode)
 {
   setCpuClockFreq(LowFreqMode_Freq);
   setPeriphClockFreq(LowFreqMode_Freq);
   PCM_setPowerMode(PCM_LF_MODE);
+
+  if(putInHighVoltageMode)
+  {
+    PCM_setCoreVoltageLevel(PCM_VCORE1);
+  }
+  else
+  {
+    PCM_setCoreVoltageLevel(PCM_VCORE0);
+  }
 }
 
 void forceLowVoltageMode()

@@ -12,7 +12,7 @@
 bool useSwitchingPowerSource();
 bool useLDOPowerSource();
 
-void forceLowFrequencyMode();
+void forceLowFrequencyMode(bool putInHighVoltageMode);
 void forceLowVoltageMode();
 void forceHighVoltageMode();
 
