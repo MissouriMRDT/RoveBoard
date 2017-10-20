@@ -59,7 +59,7 @@ void initSystemClocks()
 uint32_t setCpuClockFreq(uint32_t newFrequency)
 {
   F_CPU = MAP_SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ|SYSCTL_OSC_MAIN|SYSCTL_USE_PLL|SYSCTL_CFG_VCO_480), newFrequency);
-  
+  MAP_SysTickPeriodSet(F_CPU / SystickHz);
   return(F_CPU);
 }
 
