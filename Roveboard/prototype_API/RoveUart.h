@@ -72,6 +72,23 @@ extern void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length);
 //returns: roveUart receive buffer size
 extern uint16_t roveUartGetBufferLength(roveUART_Handle uart);
 
+//attaches a function to run whenever a module receives a message, on top of the functions the uart module
+//itself runs internally.
+//input: a function to run when a receive interrupt is generated. The function itself should have one input that will be
+//       filled with arguments by the uart module. The argument will contain the index of the module that interrupted
+//note: You can usually attach multiple callbacks if desired. The maximum amount is hardware specific
+//warning: It's a good idea not to make these too slow to run; if the uart is constantly receiving a lot of messages, it might
+//lead to the callbacks hogging the processor and even having data thrown out due to the receive FIFO being overloaded in the meantime
+extern void roveUartAttachReceiveCb(void (*userFunc)(uint8_t moduleThatReceived));
+
+//attaches a function to run whenever a module is finished transmitting a message or messages, on top of the functions the uart module
+//itself runs internally.
+//input: a function to run when a transmit interrupt is generated. The function itself should have one input that will be
+//       filled with arguments by the uart module. The argument will contain the index of the module that interrupted
+//note: You can usually attach multiple callbacks if desired. The maximum amount is hardware specific
+extern void roveUartAttachTransmitCb(void (*userFunc)(uint8_t moduleThatTransmitted));
+
+
 //for deprecated libraries
 #define roveBoard_UART_open(x, y, z, a)		roveUartOpen(x, y, z, a)
 #define roveBoard_UART_write(x, y, z)	roveUartWrite(x, y, z)

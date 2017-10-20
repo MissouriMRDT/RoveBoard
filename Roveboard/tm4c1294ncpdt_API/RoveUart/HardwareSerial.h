@@ -92,6 +92,9 @@ class HardwareSerial
 		void setOutputSettings(uint8_t paritySettings, uint8_t stopBitSettings, uint8_t wordLengthSettings);
 };
 
+void attachTransmitCb(void (*userFunc)(uint8_t));
+void attachReceiveCb(void (*userFunc)(uint8_t));
+
 extern HardwareSerial Serial;
 extern HardwareSerial Serial1;
 extern HardwareSerial Serial2;

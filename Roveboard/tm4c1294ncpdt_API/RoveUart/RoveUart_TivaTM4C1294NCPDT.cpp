@@ -139,3 +139,12 @@ uint16_t roveUartGetBufferLength(roveUART_Handle uart)
   return serial->getBufferSize();
 }
 
+void roveUartAttachReceiveCb(void (*userFunc)(uint8_t moduleThatReceived))
+{
+  attachTransmitCb(userFunc);
+}
+
+void roveUartAttachTransmitCb(void (*userFunc)(uint8_t moduleThatTransmitted))
+{
+  attachReceiveCb(userFunc);
+}

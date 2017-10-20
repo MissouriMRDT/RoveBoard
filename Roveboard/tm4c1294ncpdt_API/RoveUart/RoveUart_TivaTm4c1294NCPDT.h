@@ -123,5 +123,22 @@ void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length);
 //note: default buffer size is 256
 uint16_t roveUartGetBufferLength(roveUART_Handle uart);
 
+//attaches a function to run whenever a module receives a message, on top of the functions the uart module
+//itself runs internally.
+//input: a function to run when a receive interrupt is generated. The function itself should have one input that will be
+//       filled with arguments by the uart module. The argument will contain the index of the module that interrupted
+//note: You can attach multiple callbacks if desired. The maximum amount is 8
+//warning: It's a good idea not to make these too slow to run; if the uart is constantly receiving a lot of messages, it might
+//lead to the callbacks hogging the processor and even having data thrown out due to the receive FIFO being overloaded in the meantime
+void roveUartAttachReceiveCb(void (*userFunc)(uint8_t moduleThatReceived));
+
+//attaches a function to run whenever a module is finished transmitting a message or messages, on top of the functions the uart module
+//itself runs internally.
+//input: a function to run when a transmit interrupt is generated. The function itself should have one input that will be
+//       filled with arguments by the uart module. The argument will contain the index of the module that interrupted
+//note: You can attach multiple callbacks if desired. The maximum amount is 8
+void roveUartAttachTransmitCb(void (*userFunc)(uint8_t moduleThatTransmitted));
+
+
 
 #endif /* ROVEBOARD_TM4C1294NCPDT_ROVEBOARD_TM4C1294NCPDT_ROVEUART_ROVEUART_TIVATM4C1294NCPDT_H_ */

@@ -55,6 +55,10 @@
 
 #define UART_BASE g_ulUARTBase[uartModule]
 
+static const uint8_t MaxCallbacks = 8;
+static void (*receiveCbFuncs[MaxCallbacks])(uint8_t module);
+static void (*transmitCbFuncs[MaxCallbacks])(uint8_t module);
+
 static const unsigned long g_ulUARTBase[8] =
 {
     UART0_BASE, UART1_BASE, UART2_BASE, UART3_BASE,
@@ -330,8 +334,7 @@ HardwareSerial::begin(unsigned long baud)
     }
 
     //
-    // Set the UART to interrupt whenever the TX FIFO is almost empty or
-    // when any character is received.
+    // Set the UART to interrupt whenever a byte is transmitted or received
     //
     UARTFIFOLevelSet(UART_BASE, UART_FIFO_TX1_8, UART_FIFO_RX1_8);
     flushAll();
@@ -516,22 +519,7 @@ size_t HardwareSerial::write(uint8_t c)
     // Check for valid arguments.
     //
     ASSERT(c != 0);
-/*
-    //this is not necessary: https://github.com/energia/Energia/issues/225
-    //
-    // If the character to the UART is \n, then add a \r before it so that
-    // \n is translated to \n\r in the output.
-    //
-	// If the output buffer is full, there's nothing for it other than to
-	// wait for the interrupt handler to empty it a bit
-    if(c == '\n')
-    {
-        while (TX_BUFFER_FULL);
-        txBuffer[txWriteIndex] = '\r';
-		txWriteIndex = (txWriteIndex + 1) % txBufferSize;
-        numTransmit ++;
-    }
-*/
+
     //
     // Send the character to the UART output.
     //
@@ -547,7 +535,7 @@ size_t HardwareSerial::write(uint8_t c)
     if(!TX_BUFFER_EMPTY)
     {
 	    primeTransmit(UART_BASE);
-        UARTIntEnable(UART_BASE, UART_INT_TX);
+      UARTIntEnable(UART_BASE, UART_INT_TX);
     }
 
     //
@@ -574,17 +562,25 @@ void HardwareSerial::UARTIntHandler(void){
         primeTransmit(UART_BASE);
 
         //
-        // If the output buffer is empty, turn off the transmit interrupt.
+        // If the output buffer is empty, turn off the transmit interrupt. Run any user transmit callbacks
         //
         if(TX_BUFFER_EMPTY)
         {
             UARTIntDisable(UART_BASE, UART_INT_TX);
+            uint8_t i;
+            for(i = 0; i < 8; i++)
+            {
+              if(transmitCbFuncs[i])
+              {
+                transmitCbFuncs[i](uartModule);
+              }
+            }
         }
     }
     if(ulInts & (UART_INT_RX | UART_INT_RT))
     {
         while(UARTCharsAvail(UART_BASE))
-            {
+        {
 
             //
             // Read a character
@@ -602,13 +598,47 @@ void HardwareSerial::UARTIntHandler(void){
             rxWriteIndex = ((rxWriteIndex) + 1) % rxBufferSize;
 
             //
-            // If we wrote anything to the transmit buffer, make sure it actually
-            // gets transmitted.
+            // call user receive callbacks
             //
+            uint8_t i;
+            for(i = 0; i < 8; i++)
+            {
+              if(receiveCbFuncs[i])
+              {
+                receiveCbFuncs[i](uartModule);
+              }
+            }
+
         }
         primeTransmit(UART_BASE);
         UARTIntEnable(UART_BASE, UART_INT_TX);
     }
+}
+
+void attachTransmitCb(void (*userFunc)(uint8_t))
+{
+  uint8_t i;
+  for(i = 0; i < MaxCallbacks; i++)
+  {
+    if(!transmitCbFuncs[i])
+    {
+      transmitCbFuncs[i] = userFunc;
+      break;
+    }
+  }
+}
+
+void attachReceiveCb(void (*userFunc)(uint8_t))
+{
+  uint8_t i;
+  for(i = 0; i < MaxCallbacks; i++)
+  {
+    if(!receiveCbFuncs[i])
+    {
+      receiveCbFuncs[i] = userFunc;
+      break;
+    }
+  }
 }
 
 void
