@@ -127,5 +127,3 @@ void EthernetClass::enableActivityLed()
 	GPIOPinConfigure(ACTIVITY_LED);
 	GPIOPinTypeEthernetLED(ACTIVITY_LED_BASE, ACTIVITY_LED_PIN);
 }
-
-EthernetClass Ethernet;
