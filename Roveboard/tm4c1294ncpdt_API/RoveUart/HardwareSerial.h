@@ -76,7 +76,8 @@ class HardwareSerial
 		HardwareSerial(void);
 		HardwareSerial(unsigned long);
 		void begin(unsigned long);
-		void setBufferSize(unsigned long, unsigned long);
+		void setBufferSize(unsigned long);
+		unsigned long getBufferSize();
 		void setModule(unsigned long);
 		void setPins(unsigned long);
 		void end(void);

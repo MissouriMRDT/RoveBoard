@@ -6,6 +6,7 @@
 #include "RoveEthernet_TivaTM4C1294NCPDT.h"
 
 EthernetUDP udpReceiver;
+EthernetClass Ethernet;
 
 void roveEthernet_NetworkingStart(roveIP myIP)
 {

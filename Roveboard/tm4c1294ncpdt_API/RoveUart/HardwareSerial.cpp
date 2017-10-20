@@ -355,12 +355,45 @@ HardwareSerial::begin(unsigned long baud)
 }
 
 void
-HardwareSerial::setBufferSize(unsigned long txsize, unsigned long rxsize)
+HardwareSerial::setBufferSize(unsigned long buffSize)
 {
-    if (txsize > 0)
-        txBufferSize = txsize;
-    if (rxsize > 0)
-        rxBufferSize = rxsize;
+  if(buffSize == 0)
+  {
+    return;
+  }
+
+  unsigned char* oldRxBuffer = rxBuffer;
+  unsigned char* oldTxBuffer = txBuffer;
+  unsigned long oldBuffSize = txBufferSize;
+
+  IntDisable(g_ulUARTInt[uartModule]);
+
+  txBuffer = new unsigned char [buffSize];
+  rxBuffer = new unsigned char [buffSize];
+
+  unsigned long i;
+  for(i = 0; i < oldBuffSize; i++)
+  {
+    if(i >= buffSize)
+    {
+      break;
+    }
+
+    rxBuffer[i] = oldRxBuffer[i];
+    txBuffer[i] = oldTxBuffer[i];
+  }
+
+  txBufferSize = buffSize;
+  rxBufferSize = buffSize;
+  delete oldRxBuffer;
+  delete oldTxBuffer;
+
+  IntEnable(g_ulUARTInt[uartModule]);
+}
+
+unsigned long HardwareSerial::getBufferSize()
+{
+  return txBufferSize; //rx, tx share same buff size
 }
 
 void

@@ -9,6 +9,11 @@
 static HardwareSerial* uartArray[8] = {&Serial , &Serial1, &Serial2, &Serial3,
                                   &Serial4, &Serial5, &Serial6, &Serial7};
 
+roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate, unsigned int txPin, unsigned int rxPin)
+{
+  return roveUartOpen(uart_index, baud_rate);
+}
+
 roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate) {
   
   uartArray[uart_index] -> begin(baud_rate);
@@ -108,5 +113,29 @@ roveUart_ERROR roveUartSettings(roveUART_Handle uart,unsigned int parityBits, un
 	serial -> setOutputSettings(parityBits, stopBits, wordLength);
 
 	return ROVE_UART_ERROR_SUCCESS;
+}
+
+void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length)
+{
+  if(uart.initialized == false)
+  {
+    debugFault("roveUartSetFIFOLength: handle not initialized");
+  }
+
+  HardwareSerial* serial = uartArray[uart.uart_index];
+
+  serial->setBufferSize(length);
+}
+
+uint16_t roveUartGetBufferLength(roveUART_Handle uart)
+{
+  if(uart.initialized == false)
+  {
+    debugFault("roveUartGetFIFOLength: handle not initialized");
+  }
+
+  HardwareSerial* serial = uartArray[uart.uart_index];
+
+  return serial->getBufferSize();
 }
 

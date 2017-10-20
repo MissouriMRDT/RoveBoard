@@ -27,8 +27,9 @@ typedef struct roveUART_Handle
 
 //sets up the specified uart to run at the specified baud rate
 //inputs: index of the uart module to run (0 for uart 0, 1 for uart 1...), baud rate in bits/second (max/min ranges are board specific)
+//        index of the tx pin and rx pin associated with the module (board specific).
 //returns: reference to the now setup uart, for using in the other functions
-extern roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate);
+extern roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate, unsigned int txPin, unsigned int rxPin);
 
 //writes bytes out on a uart port
 //inputs: reference of a setup uart module from roveUartOpen, a pointer to the information to write
@@ -60,8 +61,19 @@ extern int roveUartAvailable(roveUART_Handle uart);
 //returns: the byte at the top of the uart's read buffer
 extern int roveUartPeek(roveUART_Handle uart);
 
+//sets how many bytes the uart module is allowed to use up when saving received messages.
+//inputs: reference of a setup uart module from roveUartOpen, and new length of the buffer.
+//WARNING: If downsizing the buffer size from its previous size, any data that was currently sitting in the buffer outside of the
+//length of the new buffer will be lost
+extern void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length);
+
+//gets how many bytes the uart module is allowed to use up when saving received messages.
+//inputs: reference of a setup uart module from roveUartOpen, and new length of the buffer.
+//returns: roveUart receive buffer size
+extern uint16_t roveUartGetBufferLength(roveUART_Handle uart);
+
 //for deprecated libraries
-#define roveBoard_UART_open(x, y)		roveUartOpen(x, y)
+#define roveBoard_UART_open(x, y, z, a)		roveUartOpen(x, y, z, a)
 #define roveBoard_UART_write(x, y, z)	roveUartWrite(x, y, z)
 #define roveBoard_UART_available(x)		roveUartAvailable(x)
 #define roveBoard_UART_read(x, y, z)	roveUartRead(x, y, z)
