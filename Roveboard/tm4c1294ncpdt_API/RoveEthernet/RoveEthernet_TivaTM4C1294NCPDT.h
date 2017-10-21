@@ -25,15 +25,12 @@
 #include "prototype_API/RoveEthernet.h"
 
 #define ROVE_IP_ADDR_NONE INADDR_NONE
-
-inline bool operator != (IPAddress & lhs, const IPAddress & rhs) { return !(lhs == rhs); }
+#define UDP_RX_MAX_PACKETS 32
+#define UDP_TX_PACKET_MAX_SIZE 2048
 
 void roveEthernet_NetworkingStart(roveIP myIP);
 roveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port);
 roveEthernet_Error roveEthernet_SendUdpPacket(roveIP destIP, uint16_t destPort, const uint8_t* msg, size_t msgSize);
 roveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t bufferSize);
-roveIP roveEthernet_SetIP(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
 
-//attach a function to be ran automatically whenever a udp packet is received.
-void roveEthernet_attachUdpReceiveCb(void (*userFunc)());
 #endif

@@ -64,6 +64,8 @@ public:
     friend class EthernetClass;
 };
 
+inline bool operator != (IPAddress & lhs, const IPAddress & rhs) { return !(lhs == rhs); }
+
 extern const IPAddress INADDR_NONE;
 
 
