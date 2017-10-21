@@ -58,6 +58,7 @@ public:
 	virtual int read(char* buffer, size_t len) { return read((unsigned char*)buffer, len); };
 	virtual int peek();
 	virtual void flush();
+	void attachReceivecb(void (*userFunc)());
 
 	virtual IPAddress remoteIP() { return _remoteIP; };
 	virtual uint16_t remotePort() { return _remotePort; };

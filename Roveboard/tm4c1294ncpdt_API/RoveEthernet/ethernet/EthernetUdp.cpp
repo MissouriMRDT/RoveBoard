@@ -1,6 +1,9 @@
 #include "../../Clocking/Clocking_TivaTM4C1294NCPDT.h"
 #include "EthernetUdp.h"
 
+static const uint8_t MaxCallbacks = 8;
+static void (*receiveCbFuncs[MaxCallbacks])();
+
 EthernetUDP::EthernetUDP() {
 	_read = 0;
 	front = 0;
@@ -34,6 +37,16 @@ void EthernetUDP::do_recv(void *arg, struct udp_pcb *upcb, struct pbuf *p, struc
 	/* Wrap around the end of the array was reached */
 	if(udp->rear == UDP_RX_MAX_PACKETS)
 		udp->rear = 0;
+
+	//run any user attached callbacks for receiving a udp packet
+  uint8_t i;
+  for(i = 0; i < MaxCallbacks; i++)
+  {
+    if(receiveCbFuncs[i])
+    {
+      receiveCbFuncs[i]();
+    }
+  }
 }
 
 uint8_t EthernetUDP::begin(uint16_t port)
@@ -256,4 +269,17 @@ void EthernetUDP::flush()
 	if(available()) {
 		_read = _p->tot_len;
 	}
+}
+
+void EthernetUDP::attachReceivecb(void (*userFunc)())
+{
+  uint8_t i;
+  for(i = 0; i < MaxCallbacks; i++)
+  {
+    if(!receiveCbFuncs[i])
+    {
+      receiveCbFuncs[i] = userFunc;
+      break;
+    }
+  }
 }

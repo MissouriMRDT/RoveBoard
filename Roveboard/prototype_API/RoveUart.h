@@ -44,6 +44,9 @@ extern roveUart_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, si
 //warning: Blocking, won't return until the uart has that many bytes in its incoming buffer.
 extern roveUart_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
 
+//clears out the uart receive and transmit buffers
+extern roveUart_ERROR roveUartFlushAll(roveUART_Handle uart);
+
 //reads bytes from a uart port
 //inputs: reference of a setup uart module from roveUartOpen, a pointer to the buffer to read into
 //(can be address of a single piece of data, an array, etc), and how many bytes are to be read.

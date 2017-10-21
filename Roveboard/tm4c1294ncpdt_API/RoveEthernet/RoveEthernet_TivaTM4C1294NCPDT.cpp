@@ -51,3 +51,8 @@ roveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t
   }
 }
 
+void roveEthernet_attachUdpReceiveCb(void (*userFunc)())
+{
+  udpReceiver.attachReceivecb(userFunc);
+}
+
