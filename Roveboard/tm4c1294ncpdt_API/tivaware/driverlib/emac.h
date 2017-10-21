@@ -3,7 +3,7 @@
 // emac.h - Defines and Macros for the Ethernet module on Snowflake-class
 //          devices.
 //
-// Copyright (c) 2012-2013 Texas Instruments Incorporated.  All rights reserved.
+// Copyright (c) 2012-2016 Texas Instruments Incorporated.  All rights reserved.
 // Software License Agreement
 // 
 //   Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-// This is part of revision 2.0.1.11577 of the Tiva Peripheral Driver Library.
+// This is part of revision 2.1.3.156 of the Tiva Peripheral Driver Library.
 //
 //*****************************************************************************
 
@@ -147,14 +147,14 @@ struct tEMACDMADescriptor
     //! queue.  Bit 31 is always the ``OWN'' bit which, when set, indicates
     //! that the hardware has control of the descriptor.
     //
-    uint32_t ui32CtrlStatus;
+    volatile uint32_t ui32CtrlStatus;
 
     //
     //! The second descriptor word contains information on the size of the
     //! buffer or buffers attached to the descriptor and various additional
     //! control bits.
     //
-    uint32_t ui32Count;
+    volatile uint32_t ui32Count;
 
     //
     //! The third descriptor word contains a pointer to the buffer containing
@@ -178,7 +178,7 @@ struct tEMACDMADescriptor
     //! The fifth descriptor word is reserved for transmit descriptors but
     //! used to report extended status in a receive descriptor.
     //
-    uint32_t ui32ExtRxStatus;
+    volatile uint32_t ui32ExtRxStatus;
 
     //
     //! The sixth descriptor word is reserved for both transmit and receive
@@ -193,13 +193,13 @@ struct tEMACDMADescriptor
     //! packet.  Availability of the timestamp is indicated via a status bit
     //! in the first descriptor word.
     //
-    uint32_t ui32IEEE1588TimeLo;
+    volatile uint32_t ui32IEEE1588TimeLo;
 
     //
     //! The eighth descriptor word contains the high 32 bits of the 64-bit
     //! timestamp captured for transmitted or received data.
     //
-    uint32_t ui32IEEE1588TimeHi;
+    volatile uint32_t ui32IEEE1588TimeHi;
 };
 
 //*****************************************************************************
