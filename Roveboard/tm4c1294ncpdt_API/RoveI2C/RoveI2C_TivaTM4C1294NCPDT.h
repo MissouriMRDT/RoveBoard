@@ -33,9 +33,9 @@
  * If the function returns a timeout error, you'll need to re-initialize the i2c module.
  */
 
-#include "prototype_API/RoveI2C.h"
 #include <stdint.h>
 #include <stddef.h>
+#include "../../standardized_API/RoveI2C.h"
 
 #define I2C_Module0 0
 #define I2C_Module1 1

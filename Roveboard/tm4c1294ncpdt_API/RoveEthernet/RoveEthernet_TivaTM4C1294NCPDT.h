@@ -22,7 +22,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "prototype_API/RoveEthernet.h"
+#include "../../standardized_API/RoveEthernet.h"
 
 #define ROVE_IP_ADDR_NONE INADDR_NONE
 #define UDP_RX_MAX_PACKETS 32
