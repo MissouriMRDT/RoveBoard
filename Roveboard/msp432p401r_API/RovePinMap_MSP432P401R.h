@@ -9,6 +9,7 @@
 #define ROVEBOARD_MSP432P401R_API_ROVEPINMAP_MSP432P401R_H_
 
 #include "msp432Ware/inc/msp.h"
+#include "msp432Ware/driverlib/driverlib.h"
 
 const uint8_t P1_0 = 4;
 const uint8_t P1_1 = 5;

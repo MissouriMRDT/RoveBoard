@@ -174,6 +174,20 @@ int roveUartAvailable(roveUART_Handle uart) {
   return serial -> available();
 }
 
+roveUart_ERROR roveUartFlushAll(roveUART_Handle uart)
+{
+  if(uart.initialized == false)
+  {
+    debugFault("roveUartFlushAll: handle not initialized");
+  }
+
+  HardwareSerial* serial = uartArray[uart.uart_index];
+
+  serial->flushAll();
+
+  return ROVE_UART_ERROR_SUCCESS;
+}
+
 roveUart_ERROR roveUartSettings(roveUART_Handle uart,unsigned int parityBits, unsigned int stopBits)
 {
   if(uart.initialized == false)
@@ -190,12 +204,36 @@ roveUart_ERROR roveUartSettings(roveUART_Handle uart,unsigned int parityBits, un
 
 void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length)
 {
+  if(uart.initialized == false)
+  {
+    debugFault("roveUartSetFIFOLength: handle not initialized");
+  }
 
+  HardwareSerial* serial = uartArray[uart.uart_index];
+
+  serial->setBufferSize(length);
 }
 
 uint16_t roveUartGetBufferLength(roveUART_Handle uart)
 {
+  if(uart.initialized == false)
+  {
+    debugFault("roveUartGetFIFOLength: handle not initialized");
+  }
 
+  HardwareSerial* serial = uartArray[uart.uart_index];
+
+  return serial->getBufferSize();
+}
+
+void roveUartAttachReceiveCb(void (*userFunc)(uint8_t moduleThatReceived))
+{
+  attachTransmitCb(userFunc);
+}
+
+void roveUartAttachTransmitCb(void (*userFunc)(uint8_t moduleThatTransmitted))
+{
+  attachReceiveCb(userFunc);
 }
 
 

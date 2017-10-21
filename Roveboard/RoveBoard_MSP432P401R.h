@@ -21,6 +21,7 @@
 #include "msp432p401r_API/SysInit/SysInit_MSP432P401R.h"
 #include "msp432p401r_API/Power/Power_MSP432P401R.h"
 #include "msp432p401r_API/RoveUart/RoveUart_MSP432P401R.h"
+#include "msp432p401r_API/RovePinMap_MSP432P401R.h"
 
 static int dummySoThisRunsBeforeMain = (initSystem(), 0);
 

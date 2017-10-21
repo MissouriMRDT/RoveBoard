@@ -43,7 +43,6 @@ class HardwareSerial
     unsigned long rxReadIndex;
     unsigned long uartModule;
     eUSCI_UART_Config config;
-    void flushAll(void);
     void primeTransmit();
     void configureForBaud(uint32_t baud);
     uint8_t lookupSecondModReg(float N);
@@ -59,6 +58,7 @@ class HardwareSerial
     int peek(void);
     int read(void);
     void flush(void);
+    void flushAll(void);
     void UARTIntHandler(void);
     size_t write(uint8_t c);
     size_t write(const uint8_t *buffer, size_t size);
@@ -70,6 +70,9 @@ extern HardwareSerial Serial;
 extern HardwareSerial Serial1;
 extern HardwareSerial Serial2;
 extern HardwareSerial Serial3;
+
+void attachTransmitCb(void (*userFunc)(uint8_t));
+void attachReceiveCb(void (*userFunc)(uint8_t));
 
 extern "C" void UARTIntHandler0(void);
 extern "C" void UARTIntHandler1(void);

@@ -27,7 +27,7 @@
 #define uartModule2 2
 #define uartModule3 3
 
-roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate);
+roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate, unsigned int txPin, unsigned int rxPin);
 roveUart_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, size_t bytes_to_write);
 roveUart_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
 roveUart_ERROR roveUartReadNonBlocking(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
@@ -35,6 +35,8 @@ int roveUartAvailable(roveUART_Handle uart);
 int roveUartPeek(roveUART_Handle uart);
 roveUart_ERROR roveUartSettings(roveUART_Handle uart, unsigned int parityBits, unsigned int stopBits);
 
+//clears out the uart receive and transmit buffers
+roveUart_ERROR roveUartFlushAll(roveUART_Handle uart);
 
 //sets how many bytes the uart module is allowed to use up when saving received messages.
 //inputs: reference of a setup uart module from roveUartOpen, and new length of the buffer.
@@ -48,6 +50,19 @@ void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length);
 //note: default size is 16 bytes
 uint16_t roveUartGetBufferLength(roveUART_Handle uart);
 
+//attaches a function to run whenever a module receives a message, on top of the functions the uart module
+//itself runs internally.
+//input: a function to run when a receive interrupt is generated. The function itself should have one input that will be
+//       filled with arguments by the uart module. The argument will contain the index of the module that interrupted
+//note: You can usually attach multiple callbacks if desired. The maximum amount is 3
+void roveUartAttachReceiveCb(void (*userFunc)(uint8_t moduleThatReceived));
+
+//attaches a function to run whenever a module is finished transmitting a message or messages, on top of the functions the uart module
+//itself runs internally.
+//input: a function to run when a transmit interrupt is generated. The function itself should have one input that will be
+//       filled with arguments by the uart module. The argument will contain the index of the module that interrupted
+//note: You can usually attach multiple callbacks if desired. The maximum amount is 3
+void roveUartAttachTransmitCb(void (*userFunc)(uint8_t moduleThatTransmitted));
 
 
 

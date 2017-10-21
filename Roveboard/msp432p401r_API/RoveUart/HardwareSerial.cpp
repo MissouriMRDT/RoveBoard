@@ -21,10 +21,14 @@
 #define RX_BUFFER_EMPTY    (rxReadIndex == rxWriteIndex)
 #define RX_BUFFER_FULL     (((rxWriteIndex + 1) % rxBufferSize) == rxReadIndex)
 
-#define UART_CLOCK_FREQ    MAP_CS_getSMCLK()
+#define UART_CLOCK_FREQ    CS_getSMCLK()
 #define UART_CLOCK_SOURCE  EUSCI_A_UART_CLOCKSOURCE_SMCLK
 
 #define UART_INTERRUPTS    EUSCI_A_UART_TRANSMIT_INTERRUPT | EUSCI_A_UART_RECEIVE_INTERRUPT
+
+static const uint8_t MaxCallbacks = 3;
+static void (*receiveCbFuncs[MaxCallbacks])(uint8_t module);
+static void (*transmitCbFuncs[MaxCallbacks])(uint8_t module);
 
 #define UART_BASE g_ulUARTBase[uartModule]
 
@@ -93,19 +97,20 @@ HardwareSerial::primeTransmit()
     // Disable the UART interrupt. If we don't do this there is a race
     // condition which can cause the read index to be corrupted.
     //
-    MAP_UART_disableInterrupt(UART_BASE, UART_INTERRUPTS);
+    UART_disableInterrupt(UART_BASE, UART_INTERRUPTS);
 
     //
     // Yes - take some characters out of the transmit buffer and feed
     // them to the UART transmit FIFO.
     //
-    MAP_UART_transmitData(UART_BASE, txBuffer[txReadIndex]);
+    //UART_transmitData(UART_BASE, txBuffer[txReadIndex]); for some reason the driverlib function fails
+    EUSCI_A_CMSIS(UART_BASE)->TXBUF = txBuffer[txReadIndex];
     txReadIndex = (txReadIndex + 1) % txBufferSize;
 
     //
     // Reenable the UART interrupt.
     //
-    MAP_UART_enableInterrupt(UART_BASE, UART_INTERRUPTS);
+    UART_enableInterrupt(UART_BASE, UART_INTERRUPTS);
 
     transmitting = true;
   }
@@ -143,36 +148,65 @@ void HardwareSerial::setOutputSettings(uint8_t paritySettings, uint8_t stopBitSe
       config.numberofStopBits = EUSCI_A_UART_TWO_STOP_BITS;
       break;
   }
+  UART_disableModule(UART_BASE);
+  UART_initModule(UART_BASE, &config);
 
-  MAP_UART_initModule(UART_BASE, &config);
+  switch(UART_BASE)
+  {
+    case EUSCI_A0_BASE:
+      UART_registerInterrupt(UART_BASE, UARTIntHandler0);
+      break;
+
+    case EUSCI_A1_BASE:
+      UART_registerInterrupt(UART_BASE, UARTIntHandler1);
+      break;
+
+    case EUSCI_A2_BASE:
+      UART_registerInterrupt(UART_BASE, UARTIntHandler2);
+      break;
+  case EUSCI_A3_BASE:
+      UART_registerInterrupt(UART_BASE, UARTIntHandler3);
+      break;
+  }
+
+  //
+  // Set the UART to interrupt whenever a character is transmitted or when any character is received.
+  //
+  flushAll();
+  UART_enableInterrupt(UART_BASE, UART_INTERRUPTS);
+
+  //
+  // Enable the UART operation.
+  //
+  UART_enableModule(UART_BASE);
 }
 
 void
 HardwareSerial::begin(unsigned long baud, uint8_t txPin, uint8_t rxPin)
 {
   //set pins
-  MAP_GPIO_setAsPeripheralModuleFunctionInputPin(pinToPinPort[txPin], pinToPinMask[txPin], GPIO_PRIMARY_MODULE_FUNCTION);
-  MAP_GPIO_setAsPeripheralModuleFunctionInputPin(pinToPinPort[rxPin], pinToPinMask[rxPin], GPIO_PRIMARY_MODULE_FUNCTION);
+  GPIO_setAsPeripheralModuleFunctionInputPin(pinToPinPort[txPin], pinToPinMask[txPin], GPIO_PRIMARY_MODULE_FUNCTION);
+  GPIO_setAsPeripheralModuleFunctionInputPin(pinToPinPort[rxPin], pinToPinMask[rxPin], GPIO_PRIMARY_MODULE_FUNCTION);
 
   //setup uart module
   configureForBaud(baud);
-  MAP_UART_initModule(UART_BASE, &config);
+  UART_initModule(UART_BASE, &config);
 
   switch(UART_BASE)
   {
     case EUSCI_A0_BASE:
-      MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler0);
+      UART_registerInterrupt(UART_BASE, UARTIntHandler0);
       break;
 
     case EUSCI_A1_BASE:
-      MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler1);
+      UART_registerInterrupt(UART_BASE, UARTIntHandler1);
       break;
 
     case EUSCI_A2_BASE:
-      MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler2);
+      UART_registerInterrupt(UART_BASE, UARTIntHandler2);
       break;
   case EUSCI_A3_BASE:
-      MAP_UART_registerInterrupt(UART_BASE, UARTIntHandler3);
+      UART_registerInterrupt(UART_BASE, UARTIntHandler3);
       break;
   }
 
@@ -190,12 +224,12 @@ HardwareSerial::begin(unsigned long baud, uint8_t txPin, uint8_t rxPin)
   // Set the UART to interrupt whenever a character is transmitted or when any character is received.
   //
   flushAll();
-  MAP_UART_enableInterrupt(UART_BASE, UART_INTERRUPTS);
+  UART_enableInterrupt(UART_BASE, UART_INTERRUPTS);
 
   //
   // Enable the UART operation.
   //
-  MAP_UART_enableModule(UART_BASE);
+  UART_enableModule(UART_BASE);
 
   int i;
   for(i = 0; i < 100; i++);
@@ -207,12 +241,13 @@ void HardwareSerial::setBufferSize(unsigned long buffSize)
   {
     return;
   }
+  buffSize++; //we can actually hold buffsize - 1 bytes, since the ringbuffer stops when the indexes are one short of each other
 
   unsigned char* oldRxBuffer = rxBuffer;
   unsigned char* oldTxBuffer = txBuffer;
   unsigned long oldBuffSize = txBufferSize;
 
-  MAP_UART_disableInterrupt(UART_BASE, UART_INTERRUPTS);
+  UART_disableInterrupt(UART_BASE, UART_INTERRUPTS);
 
   txBuffer = new unsigned char [buffSize];
   rxBuffer = new unsigned char [buffSize];
@@ -234,17 +269,18 @@ void HardwareSerial::setBufferSize(unsigned long buffSize)
   delete oldRxBuffer;
   delete oldTxBuffer;
 
-  MAP_UART_enableInterrupt(UART_BASE, UART_INTERRUPTS);
+  UART_enableInterrupt(UART_BASE, UART_INTERRUPTS);
 }
 
 unsigned long HardwareSerial::getBufferSize()
 {
-  return txBufferSize; //rx, tx share same buff size
+  //we can actually hold buffsize - 1 bytes, since the ringbuffer stops when the indexes are one short of each other
+  return txBufferSize - 1; //rx, tx share same buff size
 }
 
 void HardwareSerial::end()
 {
-  unsigned long ulInt = MAP_Interrupt_disableMaster();
+  unsigned long ulInt = Interrupt_disableMaster();
 
   flushAll();
 
@@ -254,12 +290,12 @@ void HardwareSerial::end()
   //
   if(!ulInt)
   {
-    MAP_Interrupt_enableMaster();
+    Interrupt_enableMaster();
   }
 
-  MAP_UART_disableInterrupt(UART_BASE, UART_INTERRUPTS);
+  UART_disableInterrupt(UART_BASE, UART_INTERRUPTS);
 
-  MAP_UART_disableModule(UART_BASE);
+  UART_disableModule(UART_BASE);
 }
 
 int HardwareSerial::available(void)
@@ -307,7 +343,7 @@ void HardwareSerial::flush()
     primeTransmit();
   }
   while(transmitting);
-  while (MAP_UART_queryStatusFlags(UART_BASE, EUSCI_A_UART_BUSY));
+  while (UART_queryStatusFlags(UART_BASE, EUSCI_A_UART_BUSY));
 }
 
 size_t HardwareSerial::write(const uint8_t *buffer, size_t size)
@@ -376,8 +412,8 @@ void HardwareSerial::UARTIntHandler(void)
   //
   // Get and clear the current interrupt source(s)
   //
-  ulInts = MAP_UART_getInterruptStatus(UART_BASE, UART_INTERRUPTS);
-  MAP_UART_clearInterruptFlag(UART_BASE, ulInts);
+  ulInts = UART_getInterruptStatus(UART_BASE, UART_INTERRUPTS);
+  UART_clearInterruptFlag(UART_BASE, ulInts);
 
   // Are we being interrupted because the TX FIFO has space available?
   //
@@ -389,8 +425,20 @@ void HardwareSerial::UARTIntHandler(void)
     //
     if(TX_BUFFER_EMPTY)
     {
-      MAP_UART_disableInterrupt(UART_BASE, EUSCI_A_UART_TRANSMIT_INTERRUPT);
+      UART_disableInterrupt(UART_BASE, EUSCI_A_UART_TRANSMIT_INTERRUPT);
       transmitting = false;
+
+      //
+      // Transmit is finished, to run user transmit callback functions
+      //
+      uint8_t i;
+      for(i = 0; i < MaxCallbacks; i++)
+      {
+        if(transmitCbFuncs[i])
+        {
+          transmitCbFuncs[i](uartModule);
+        }
+      }
     }
 
     //
@@ -408,17 +456,26 @@ void HardwareSerial::UARTIntHandler(void)
     //
     // Read a character
     //
-    lChar = MAP_UART_receiveData(UART_BASE);
+    lChar = UART_receiveData(UART_BASE);
 
     //
     // If there is space in the receive buffer, put the character
-    // there, otherwise throw it away.
+    // there, otherwise throw it away. Run user receive callbacks
     //
     uint8_t volatile full = RX_BUFFER_FULL;
     if(!full)
     {
       rxBuffer[rxWriteIndex] = lChar;
       rxWriteIndex = ((rxWriteIndex) + 1) % rxBufferSize;
+
+      uint8_t i;
+      for(i = 0; i < MaxCallbacks; i++)
+      {
+        if(receiveCbFuncs[i])
+        {
+          receiveCbFuncs[i](uartModule);
+        }
+      }
     }
   }
 }
@@ -610,6 +667,32 @@ uint8_t HardwareSerial::lookupSecondModReg(float N)
   else
   {
     return 0xFE;
+  }
+}
+
+void attachTransmitCb(void (*userFunc)(uint8_t))
+{
+  uint8_t i;
+  for(i = 0; i < MaxCallbacks; i++)
+  {
+    if(!transmitCbFuncs[i])
+    {
+      transmitCbFuncs[i] = userFunc;
+      break;
+    }
+  }
+}
+
+void attachReceiveCb(void (*userFunc)(uint8_t))
+{
+  uint8_t i;
+  for(i = 0; i < MaxCallbacks; i++)
+  {
+    if(!receiveCbFuncs[i])
+    {
+      receiveCbFuncs[i] = userFunc;
+      break;
+    }
   }
 }
 
