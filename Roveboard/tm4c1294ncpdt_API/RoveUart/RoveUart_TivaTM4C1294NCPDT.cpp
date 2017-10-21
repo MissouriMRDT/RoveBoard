@@ -127,6 +127,20 @@ void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length)
   serial->setBufferSize(length);
 }
 
+roveUart_ERROR roveUartFlushAll(roveUART_Handle uart)
+{
+  if(uart.initialized == false)
+  {
+    debugFault("roveUartFlushAll: handle not initialized");
+  }
+
+  HardwareSerial* serial = uartArray[uart.uart_index];
+
+  serial->flushAll();
+
+  return ROVE_UART_ERROR_SUCCESS;
+}
+
 uint16_t roveUartGetBufferLength(roveUART_Handle uart)
 {
   if(uart.initialized == false)

@@ -87,6 +87,9 @@ roveUart_ERROR roveUartReadNonBlocking(roveUART_Handle uart, void* read_buffer, 
 //returns: How many bytes the uart currently has in its read buffer
 int roveUartAvailable(roveUART_Handle uart);
 
+//clears out the uart receive and transmit buffers
+roveUart_ERROR roveUartFlushAll(roveUART_Handle uart);
+
 //checks what number (a byte) is at the top of the uart's read buffer, without actually taking it out of the buffer
 //inputs: reference of a setup uart module from roveUartOpen
 //returns: the byte at the top of the uart's read buffer

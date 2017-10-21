@@ -69,7 +69,6 @@ class HardwareSerial
 		unsigned long rxReadIndex;
 		unsigned long uartModule;
 		unsigned long baudRate;
-		void flushAll(void);
 		void primeTransmit(unsigned long ulBase);
 
 	public:
@@ -85,6 +84,7 @@ class HardwareSerial
 		int peek(void);
 		int read(void);
 		void flush(void);
+    void flushAll(void);
 		void UARTIntHandler(void);
 		size_t write(uint8_t c);
 		size_t write(const uint8_t *buffer, size_t size);

@@ -568,7 +568,7 @@ void HardwareSerial::UARTIntHandler(void){
         {
             UARTIntDisable(UART_BASE, UART_INT_TX);
             uint8_t i;
-            for(i = 0; i < 8; i++)
+            for(i = 0; i < MaxCallbacks; i++)
             {
               if(transmitCbFuncs[i])
               {
@@ -601,7 +601,7 @@ void HardwareSerial::UARTIntHandler(void){
             // call user receive callbacks
             //
             uint8_t i;
-            for(i = 0; i < 8; i++)
+            for(i = 0; i < MaxCallbacks; i++)
             {
               if(receiveCbFuncs[i])
               {
