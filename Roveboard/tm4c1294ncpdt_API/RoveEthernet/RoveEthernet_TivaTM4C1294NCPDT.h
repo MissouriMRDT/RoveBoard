@@ -32,5 +32,5 @@ void roveEthernet_NetworkingStart(roveIP myIP);
 roveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port);
 roveEthernet_Error roveEthernet_SendUdpPacket(roveIP destIP, uint16_t destPort, const uint8_t* msg, size_t msgSize);
 roveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t bufferSize);
-
+void roveEthernet_attachUdpReceiveCb(void (*userFunc)());
 #endif
