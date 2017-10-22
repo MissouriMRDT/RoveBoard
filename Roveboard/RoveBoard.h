@@ -20,7 +20,6 @@
 #include "standardized_API/RovePwmWrite.h"
 #include "standardized_API/RoveTimer.h"
 #include "standardized_API/RoveUart.h"
-#include "standardized_API/RovePermaMem.h"
 #include "supportingUtilities/RoveUtilities.h"
 #include "supportingUtilities/Debug.h"
 

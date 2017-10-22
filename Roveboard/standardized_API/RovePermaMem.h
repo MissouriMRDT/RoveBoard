@@ -21,7 +21,6 @@ typedef enum
   RovePermaMem_AlreadyUsed
 } RovePermaMem_Error;
 
-//extern void rovePermaMem_Init(uint16_t bytesPerBlock, uint16_t blocksToAllocate); not for general layer usage
 extern RovePermaMem_Error rovePermaMem_WriteBlockByte(uint16_t blockReference, uint8_t byteReference, uint8_t password, uint8_t valueToWrite);
 extern RovePermaMem_Error rovePermaMem_WriteBlock(uint16_t blockReference, uint8_t password, uint8_t bytes[]);
 extern RovePermaMem_Error rovePermaMem_ReadBlockByte(uint16_t blockReference, uint8_t byteReference, uint8_t password, uint8_t *readBuffer);

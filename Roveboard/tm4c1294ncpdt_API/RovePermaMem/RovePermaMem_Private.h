@@ -15,4 +15,6 @@
 #define ControlBlockPassword  0x0000EFFE
 #define BlockFactoryValue     0xFFFFFFFF
 
+void rovePermaMem_Init();
+
 #endif /* ROVEBOARD_TM4C1294NCPDT_API_ROVEPERMAMEM_ROVEPERMAMEM_PRIVATE_H_ */
