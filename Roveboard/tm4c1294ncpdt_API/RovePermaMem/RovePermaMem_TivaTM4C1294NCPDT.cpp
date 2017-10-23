@@ -34,8 +34,8 @@ static uint16_t getTotalUnusedOrFreshBlocks(bool whichToGet);
 static uint16_t inputBlockIndexToMemIndex(uint16_t inputBlockIndex);
 static void lockEeprom();
 static void unlockEeprom();
-static void udpateUseTable(uint16_t blockReference, bool setUse);
-static void udpateFreshTable(uint16_t blockReference);
+static void updateUseTable(uint16_t blockReference, bool setUse);
+static void updateFreshTable(uint16_t blockReference);
 
 static const bool getFresh = true;
 static const bool getUsed = false;
@@ -218,8 +218,8 @@ RovePermaMem_Block rovePermaMem_useBlock(uint16_t blockReference, uint16_t passw
   EEPROMBlockLock(realBlockReference);
 
   //update tables. Eeprom remains unlocked so the functions can update eeprom if need be
-  udpateUseTable(blockReference, true);
-  udpateFreshTable(blockReference);
+  updateUseTable(blockReference, true);
+  updateFreshTable(blockReference);
 
   lockEeprom();
 
@@ -465,7 +465,7 @@ static void lockEeprom()
   EEPROMBlockLock(BlockIndex_ControlBlock);
 }
 
-static void udpateUseTable(uint16_t blockReference, bool setUse)
+static void updateUseTable(uint16_t blockReference, bool setUse)
 {
   uint8_t tableIndex;
   word_t bitband;
@@ -497,8 +497,16 @@ static void udpateUseTable(uint16_t blockReference, bool setUse)
 }
 
 //precall: must have eeprom unlocked
-static void udpateFreshTable(uint16_t blockReference)
+static void updateFreshTable(uint16_t blockReference)
 {
+  //if block already noted as being spoilt, don't rewrite it into the eeprom as eeprom has limited amounts of writes allowed before it dies
+  bool b;
+  rovePermaMem_isBlockFresh(blockReference, &b);
+  if(!b)
+  {
+    return;
+  }
+
   uint8_t tableIndex;
   word_t bitband;
   if(blockReference < bitsPerWord)
