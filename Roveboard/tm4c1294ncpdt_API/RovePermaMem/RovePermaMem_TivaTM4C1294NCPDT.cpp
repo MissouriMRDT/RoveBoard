@@ -336,6 +336,7 @@ uint16_t rovePermaMem_getBytesPerBlock()
 {
   return BytesPerBlock;
 }
+
 uint16_t rovePermaMem_getTotalBlocks()
 {
   return TotalBlocks;
@@ -435,6 +436,11 @@ static uint16_t getTotalUnusedOrFreshBlocks(bool whichToGet)
   return count;
 }
 
+//our tables organize information on the blocks using bool information stored in the 32 bit words, IE
+// whether or not the first block is fresh is expressed in the first bit of the fresh table, the second is expressed
+//in the second bit, etc.
+//This function converts a block count -- 0 to 89 -- and converts it into a word that can be used in binary operation to
+//change its expression in the binary tables.
 static word_t blockCountToBitbandWord(uint16_t x)
 {
   #ifndef ROVEDEBUG_NO_DEBUG

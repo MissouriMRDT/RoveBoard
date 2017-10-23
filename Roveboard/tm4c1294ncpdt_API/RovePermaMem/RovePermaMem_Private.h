@@ -27,6 +27,8 @@ static const uint8_t ControlBlock_WordLength_blockFresh = 3 * WordLengthInBytes;
 word_t blockFreshTable[BlockReferenceTableSize];
 word_t blockUsedTable[BlockReferenceTableSize];
 
+//sets up the eeprom for usage by rovePermaMem. Performs duties such as initializing the global block tables,
+//setting up the eeprom for first time usage if necessary, and locking it after initialization is finished
 void rovePermaMem_Init();
 
 #endif /* ROVEBOARD_TM4C1294NCPDT_API_ROVEPERMAMEM_ROVEPERMAMEM_PRIVATE_H_ */
