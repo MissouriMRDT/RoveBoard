@@ -40,8 +40,10 @@ static void udpateFreshTable(uint16_t blockReference);
 static const bool getFresh = true;
 static const bool getUsed = false;
 
-RovePermaMem_Error rovePermaMem_WriteBlockByte(uint16_t blockReference, uint8_t byteReference, uint8_t password, uint8_t valueToWrite)
+RovePermaMem_Error rovePermaMem_WriteBlockByte(RovePermaMem_Block blockHandle, uint8_t byteReference, uint8_t valueToWrite)
 {
+  uint16_t blockReference = blockHandle.blockReference;
+
   if(blockReference >= TotalBlocks || byteReference >= BytesPerBlock)
   {
     return RovePermaMem_InputOutOfBounds;
@@ -59,7 +61,7 @@ RovePermaMem_Error rovePermaMem_WriteBlockByte(uint16_t blockReference, uint8_t 
   uint8_t byteBuff[BytesPerBlock];
   RovePermaMem_Error errVal;
 
-  errVal = rovePermaMem_ReadBlock(blockReference, password, byteBuff);
+  errVal = rovePermaMem_ReadBlock(blockHandle, byteBuff);
   if(errVal != RovePermaMem_Success)
   {
     return errVal;
@@ -67,11 +69,14 @@ RovePermaMem_Error rovePermaMem_WriteBlockByte(uint16_t blockReference, uint8_t 
 
   byteBuff[byteReference] = valueToWrite;
 
-  return rovePermaMem_WriteBlock(blockReference, password, byteBuff);
+  return rovePermaMem_WriteBlock(blockHandle, byteBuff);
 }
 
-RovePermaMem_Error rovePermaMem_WriteBlock(uint16_t blockReference, uint8_t password, uint8_t bytes[])
+RovePermaMem_Error rovePermaMem_WriteBlock(RovePermaMem_Block blockHandle, uint8_t bytes[])
 {
+  uint16_t blockReference = blockHandle.blockReference;
+  uint16_t password = blockHandle.password;
+
   if(blockReference >= TotalBlocks || bytes == 0)
   {
     return RovePermaMem_InputOutOfBounds;
@@ -108,8 +113,10 @@ RovePermaMem_Error rovePermaMem_WriteBlock(uint16_t blockReference, uint8_t pass
   return RovePermaMem_Success;
 }
 
-RovePermaMem_Error rovePermaMem_ReadBlockByte(uint16_t blockReference, uint8_t byteReference, uint8_t password, uint8_t *readBuffer)
+RovePermaMem_Error rovePermaMem_ReadBlockByte(RovePermaMem_Block blockHandle, uint8_t byteReference, uint8_t *readBuffer)
 {
+  uint16_t blockReference = blockHandle.blockReference;
+
   if(blockReference >= TotalBlocks || byteReference >= BytesPerBlock || readBuffer == 0)
   {
     return RovePermaMem_InputOutOfBounds;
@@ -127,7 +134,7 @@ RovePermaMem_Error rovePermaMem_ReadBlockByte(uint16_t blockReference, uint8_t b
   uint8_t byteBuff[BytesPerBlock];
   RovePermaMem_Error errVal;
 
-  errVal = rovePermaMem_ReadBlock(blockReference, password, byteBuff);
+  errVal = rovePermaMem_ReadBlock(blockHandle, byteBuff);
   if(errVal != RovePermaMem_Success)
   {
     return errVal;
@@ -138,8 +145,11 @@ RovePermaMem_Error rovePermaMem_ReadBlockByte(uint16_t blockReference, uint8_t b
   return RovePermaMem_Success;
 }
 
-RovePermaMem_Error rovePermaMem_ReadBlock(uint16_t blockReference, uint8_t password, uint8_t byteBuffer[])
+RovePermaMem_Error rovePermaMem_ReadBlock(RovePermaMem_Block blockHandle, uint8_t byteBuffer[])
 {
+  uint16_t blockReference = blockHandle.blockReference;
+  uint16_t password = blockHandle.password;
+
   if(blockReference >= TotalBlocks || byteBuffer == 0)
   {
     return RovePermaMem_InputOutOfBounds;
@@ -176,11 +186,11 @@ RovePermaMem_Error rovePermaMem_ReadBlock(uint16_t blockReference, uint8_t passw
   return RovePermaMem_Success;
 }
 
-RovePermaMem_Error rovePermaMem_useBlock(uint16_t blockReference, uint16_t passwordToUse)
+RovePermaMem_Block rovePermaMem_useBlock(uint16_t blockReference, uint16_t passwordToUse)
 {
   if(blockReference >= TotalBlocks)
   {
-    return RovePermaMem_InputOutOfBounds;
+    debugFault("useBlock: block reference out of bounds");
   }
   else
   {
@@ -188,7 +198,7 @@ RovePermaMem_Error rovePermaMem_useBlock(uint16_t blockReference, uint16_t passw
     rovePermaMem_isBlockUsed(blockReference, &b);
     if(b)
     {
-      return RovePermaMem_AlreadyUsed;
+      debugFault("useBlock: block already used by another process");
     }
   }
 
@@ -213,7 +223,11 @@ RovePermaMem_Error rovePermaMem_useBlock(uint16_t blockReference, uint16_t passw
 
   lockEeprom();
 
-  return RovePermaMem_Success;
+  RovePermaMem_Block block;
+  block.blockReference = blockReference;
+  block.password = passwordToUse;
+
+  return block;
 }
 
 bool rovePermaMem_getFirstAvailableBlock(bool onlyGetFreshBlocks, uint16_t startingBlock, uint16_t *ret_blockReference)
