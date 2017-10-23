@@ -17,15 +17,17 @@ RovePermaMem_Error rovePermaMem_ReadBlockByte(uint16_t blockReference, uint8_t b
 RovePermaMem_Error rovePermaMem_ReadBlock(uint16_t blockReference, uint8_t password, uint8_t byteBuffer[]);
 
 RovePermaMem_Error rovePermaMem_useBlock(uint16_t blockReference, uint16_t passwordToUse);
-uint16_t rovePermaMem_getFirstAvailableBlock(bool overrideNonEmptyBlocks, uint16_t startingBlock);
-uint16_t rovePermaMem_getTotalAvailableBlocks();
-uint16_t rovePermaMem_getTotalEmptyBlocks();
+bool rovePermaMem_getFirstAvailableBlock(bool onlyGetFreshBlocks, uint16_t startingBlock, uint16_t* ret_blockReference);
+
+uint16_t rovePermaMem_getTotalUsedBlocks();
+uint16_t rovePermaMem_getTotalUnusedBlocks();
+uint16_t rovePermaMem_getTotalFreshBlocks();
 
 uint16_t rovePermaMem_getBytesPerBlock();
 uint16_t rovePermaMem_getTotalBlocks();
 
-RovePermaMem_Error rovePermaMem_isBlockUsed(uint16_t blockReference);
-RovePermaMem_Error rovePermaMem_isBlockEmpty(uint16_t blockReference);
+RovePermaMem_Error rovePermaMem_isBlockUsed(uint16_t blockReference, bool *retVal);
+RovePermaMem_Error rovePermaMem_isBlockFresh(uint16_t blockReference, bool *retVal);
 
 
 
