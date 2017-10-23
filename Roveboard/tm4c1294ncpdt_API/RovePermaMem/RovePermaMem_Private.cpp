@@ -23,7 +23,6 @@ static void setupGlobalTables();
 
 void rovePermaMem_Init()
 {
-  uint32_t writeValue;
   uint32_t readValue;
 
   //try turning on the eeprom
@@ -48,6 +47,11 @@ void rovePermaMem_Init()
 
   //make sure to set up the tables the non private files use before leaving
   setupGlobalTables();
+
+  //set up protection so that nothing can access the EEPROM's blocks unless a password has been set for said blocks and is used.
+  //Used to make the whole thing thread safe even with interrupts, as even if interrupted in the middle of a RovePermaMem function call
+  //other parts of the program still wont' be able to mess with the EEPROM.
+  EEPROMBlockProtectSet(BlockAddress_ControlBlock, EEPROM_PROT_NA_LNA_URW);
 
   //lock all blocks in the system by writing a password to block 0 and locking it, which locks the whole system until we unlock block 0 again
   uint32_t writeVal = ControlBlockPassword;
