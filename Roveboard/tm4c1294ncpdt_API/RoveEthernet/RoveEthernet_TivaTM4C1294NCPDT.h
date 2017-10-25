@@ -43,7 +43,20 @@ roveEthernet_Error roveEthernet_SendUdpPacket(roveIP destIP, uint16_t destPort, 
 //Returns Success if there was a udp message in our receive buffer.
 roveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t bufferSize);
 
-//attach a function to be ran automatically whenever a udp packet is received.
-void roveEthernet_attachUdpReceiveCb(void (*userFunc)());
+//attach a function to be ran automatically whenever a udp packet is received. Only one allowed. Make sure it isn't too long otherwise
+//it could cause a race condition.
+//function arguments:   msgBuffer[]: an array of size msgSize that contains all the data bytes that was
+//                                   in the udp packet we just received
+//                      msgSize:     The size of the data array
+//
+//function returns:     whether or not to keep this packet in the buffer. If you return true, roveEthernet will keep it in its
+//                      internal udp message buffer so that it will appear again when you call GetUdpMsg, after you eventually
+//                      process enough packets to bring this one to the top. False means we'll remove the packet from the
+//                      buffer when the function returns and you won't see it again
+//
+//Note:                 Comparing to getUdpMsg: GetUdpMsg gets you the the message at the top of the buffer, this will get you the message
+//                      at the bottom of the buffer. GetUdpMsg automatically removes the read packet from the buffer, this will let you choose
+//                      to put it back into the buffer or remove it
+void roveEthernet_attachUdpReceiveCb(bool (*userFunc)(uint8_t* msgBuffer, size_t msgSize));
 
 #endif

@@ -32,8 +32,8 @@
 #define CLASS_C 0x6
 
 static uint8_t macArray[8];
-static const uint8_t MaxCallbacks = 8;
-static void (*receiveCbFuncs[MaxCallbacks])();
+static const uint8_t MaxCallbacks = 1;
+static bool (*receiveCbFuncs[MaxCallbacks])(uint8_t* msgBuffer, size_t msgSize);
 static const IPAddress CLASS_A_SUBNET(255, 0, 0, 0);
 static const IPAddress CLASS_B_SUBNET(255, 255, 0, 0);
 static const IPAddress CLASS_C_SUBNET(255, 255, 255, 0);
@@ -69,8 +69,8 @@ typedef struct
   uint16_t _write;
 }UdpData;
 
-UdpData data;
-
+static UdpData data;
+static bool weHazCallbacks = false;
 void do_recv(void *arg, struct udp_pcb *upcb, struct pbuf *p, struct ip_addr* addr, uint16_t port);
 static bool beginUdpPacket(IPAddress ip, uint16_t port);
 static size_t writeUdpPacket(const uint8_t *buffer, size_t size);
@@ -81,6 +81,7 @@ static bool endUdpPacket();
 static int udpAvailable();
 static void stopUdp();
 static void startEthernetHardware(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet);
+static void readUdpPacket(pbuf *p, uint16_t lengthOfPacket, uint8_t* returnByteBuffer);
 
 extern void lwIPEthernetIntHandler(void);
 
@@ -145,7 +146,7 @@ roveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t
   }
 }
 
-void roveEthernet_attachUdpReceiveCb(void (*userFunc)())
+void roveEthernet_attachUdpReceiveCb(bool (*userFunc)(uint8_t* msgBuffer, size_t msgSize))
 {
   uint8_t i;
   for(i = 0; i < MaxCallbacks; i++)
@@ -156,6 +157,8 @@ void roveEthernet_attachUdpReceiveCb(void (*userFunc)())
       break;
     }
   }
+
+  weHazCallbacks = true;
 }
 
 static void startEthernetHardware(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet)
@@ -300,6 +303,30 @@ void do_recv(void *args, struct udp_pcb *upcb, struct pbuf *p, struct ip_addr* a
     return;
   }
 
+  //run any user attached callbacks for receiving a udp packet
+  if(weHazCallbacks)
+  {
+   uint8_t i;
+   uint16_t packetLength = p->len;
+   uint8_t buff[packetLength];
+   readUdpPacket(p, packetLength, buff);
+   bool keepPacket = true;
+
+   for(i = 0; i < MaxCallbacks; i++)
+   {
+     if(receiveCbFuncs[i])
+     {
+       keepPacket = receiveCbFuncs[i](buff, packetLength);
+     }
+   }
+
+   if(keepPacket == false)
+   {
+     pbuf_free(p);
+     return;
+   }
+  }
+
   /* Increase the number of packets in the queue
    * that are waiting for processing */
   udp->count++;
@@ -316,16 +343,6 @@ void do_recv(void *args, struct udp_pcb *upcb, struct pbuf *p, struct ip_addr* a
   /* Wrap around the end of the array was reached */
   if(udp->rear == UDP_RX_MAX_PACKETS)
     udp->rear = 0;
-
-  //run any user attached callbacks for receiving a udp packet
-  uint8_t i;
-  for(i = 0; i < MaxCallbacks; i++)
-  {
-    if(receiveCbFuncs[i])
-    {
-      receiveCbFuncs[i]();
-    }
-  }
 }
 
 static int readUdp(unsigned char* buffer, size_t len)
@@ -345,6 +362,22 @@ static int readUdp(unsigned char* buffer, size_t len)
   }
 
   return i;
+}
+
+static void readUdpPacket(pbuf *p, uint16_t lengthOfPacket, uint8_t* returnByteBuffer)
+{
+  int i;
+  uint8_t *buf = (uint8_t *)data._p->payload;
+
+  for(i = 0; i < lengthOfPacket; i++)
+  {
+    if(i >=  p->len)
+    {
+      break;
+    }
+
+    returnByteBuffer[i] = buf[i];
+  }
 }
 
 static int readUdp()
