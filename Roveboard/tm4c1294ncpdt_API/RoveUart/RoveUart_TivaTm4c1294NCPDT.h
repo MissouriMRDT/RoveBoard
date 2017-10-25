@@ -56,8 +56,6 @@
 #define AlwaysZero 3
 #define AlwaysOne 4
 
-//std functions
-
 //overload for standard prototype's sake. See other version below
 roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate, unsigned int txPin, unsigned int rxPin);
 
@@ -94,8 +92,6 @@ roveUart_ERROR roveUartFlushAll(roveUART_Handle uart);
 //inputs: reference of a setup uart module from roveUartOpen
 //returns: the byte at the top of the uart's read buffer
 int roveUartPeek(roveUART_Handle uart);
-
-//non std functions
 
 //sets up the specified uart to run at the specified baud rate
 //inputs: index of the uart module to run (0 for uart 0, 1 for uart 1...up to 7), baud rate in bits/second. Max is 7.5 Mb/s
