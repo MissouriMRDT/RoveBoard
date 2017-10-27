@@ -96,6 +96,8 @@ const uint8_t P10_0 = 100;
 const uint8_t P10_1 = 1;
 const uint8_t P10_2 = 2;
 const uint8_t P10_3 = 3;
+const uint8_t P10_4 = 24;
+const uint8_t P10_5 = 25;
 
 static const uint16_t NotAPin = 0xFFFE;
 
@@ -105,7 +107,7 @@ static const uint16_t pinToPinPort[] =
   GPIO_PORT_P10,               //1           P10.1       digital, UCB3CLK
   GPIO_PORT_P10,               //2           P10.2       digital, UCB3SIMO, UCB3SDA
   GPIO_PORT_P10,               //3           P10.3       digital, UCB3SOMI, UCB3SCL
-  GPIO_PORT_P1,                //4           P1.0        digital, UCB3CLK
+  GPIO_PORT_P1,                //4           P1.0        digital, UCA0STE
   GPIO_PORT_P1,                //5           P1.1        digital, UCA0CLK
   GPIO_PORT_P1,                //6           P1.2        digital, UCA0RXD, UCA0SOMI
   GPIO_PORT_P1,                //7           P1.3        digital, UCA0TXD, UCA0SIMO
@@ -159,9 +161,9 @@ static const uint16_t pinToPinPort[] =
   GPIO_PORT_P6,                //55          P6.1        digital, A14
   GPIO_PORT_P4,                //56          P4.0        digital, A13
   GPIO_PORT_P4,                //57          P4.1        digital, A12
-  GPIO_PORT_P4,                //58          P4.2        digital, A11, ACLK, TA2CLK
-  GPIO_PORT_P4,                //59          P4.3        digital, A10, MCLK, RTCCLK
-  GPIO_PORT_P4,                //60          P4.4        digital, A9, HSMCLK, SVMHOUT
+  GPIO_PORT_P4,                //58          P4.2        digital, ACLK, TA2CLK, A11
+  GPIO_PORT_P4,                //59          P4.3        digital, MCLK, RTCCLK, A10
+  GPIO_PORT_P4,                //60          P4.4        digital, HSMCLK, SVMHOUT, A9
   GPIO_PORT_P4,                //61          P4.5        digital, A8
   GPIO_PORT_P4,                //62          P4.6        digital, A7
   GPIO_PORT_P4,                //63          P4.7        digital, A6
@@ -189,9 +191,9 @@ static const uint16_t pinToPinPort[] =
   NotAPin,                     //85          PJ.2        digital, HFXOUT
   NotAPin,                     //86          PJ.3        digital, HFXIN
   NotAPin,                     //87          N/A         AVCC2
-  GPIO_PORT_P7,                //88          P7.0        PM_SMCLK, PM_DMAE0
-  GPIO_PORT_P7,                //89          P7.1        PM_C0OUT, PM_TA0CLK
-  GPIO_PORT_P7,                //90          P7.2        PM_C1OUT, PM_TA1CLK
+  GPIO_PORT_P7,                //88          P7.0        digital, PM_SMCLK, PM_DMAE0
+  GPIO_PORT_P7,                //89          P7.1        digital, PM_C0OUT, PM_TA0CLK
+  GPIO_PORT_P7,                //90          P7.2        digital, PM_C1OUT, PM_TA1CLK
   GPIO_PORT_P7,                //91          P7.3        digital, PM_TA0.0
   NotAPin,                     //92          PJ.4        digital, TDI
   NotAPin,                     //93          PJ.5        digital, TD0, SWO
@@ -201,7 +203,7 @@ static const uint16_t pinToPinPort[] =
   GPIO_PORT_P9,                //97          P9.5        digital, UCA3CLK
   GPIO_PORT_P9,                //98          P9.6        digital, UCA3RXD, UCA3SOMI
   GPIO_PORT_P9,                //99          P9.7        digital, UCA3TXD, UCA3SIMO
-  GPIO_PORT_P10,               //100         P10.0       digital, UCB3STE/
+  GPIO_PORT_P10               //100         P10.0       digital, UCB3STE
 };
 
 
@@ -211,7 +213,7 @@ static const uint16_t pinToPinMask[] =
   GPIO_PIN1,                //1           P10.1       digital, UCB3CLK
   GPIO_PIN2,                //2           P10.2       digital, UCB3SIMO, UCB3SDA
   GPIO_PIN3,                //3           P10.3       digital, UCB3SOMI, UCB3SCL
-  GPIO_PIN0,                //4           P1.0        digital, UCB3CLK
+  GPIO_PIN0,                //4           P1.0        digital, UCA0STE
   GPIO_PIN1,                //5           P1.1        digital, UCA0CLK
   GPIO_PIN2,                //6           P1.2        digital, UCA0RXD, UCA0SOMI
   GPIO_PIN3,                //7           P1.3        digital, UCA0TXD, UCA0SIMO
@@ -265,9 +267,9 @@ static const uint16_t pinToPinMask[] =
   GPIO_PIN1,                //55          P6.1        digital, A14
   GPIO_PIN0,                //56          P4.0        digital, A13
   GPIO_PIN1,                //57          P4.1        digital, A12
-  GPIO_PIN2,                //58          P4.2        digital, A11, ACLK, TA2CLK
-  GPIO_PIN3,                //59          P4.3        digital, A10, MCLK, RTCCLK
-  GPIO_PIN4,                //60          P4.4        digital, A9, HSMCLK, SVMHOUT
+  GPIO_PIN2,                //58          P4.2        digital, ACLK, TA2CLK, A11
+  GPIO_PIN3,                //59          P4.3        digital, MCLK, RTCCLK, A10
+  GPIO_PIN4,                //60          P4.4        digital, HSMCLK, SVMHOUT, A9
   GPIO_PIN5,                //61          P4.5        digital, A8
   GPIO_PIN6,                //62          P4.6        digital, A7
   GPIO_PIN7,                //63          P4.7        digital, A6
@@ -295,9 +297,9 @@ static const uint16_t pinToPinMask[] =
   NotAPin,                  //85          PJ.2        digital, HFXOUT
   NotAPin,                  //86          PJ.3        digital, HFXIN
   NotAPin,                  //87          N/A         AVCC2
-  GPIO_PIN0,                //88          P7.0        PM_SMCLK, PM_DMAE0
-  GPIO_PIN1,                //89          P7.1        PM_C0OUT, PM_TA0CLK
-  GPIO_PIN2,                //90          P7.2        PM_C1OUT, PM_TA1CLK
+  GPIO_PIN0,                //88          P7.0        digital, PM_SMCLK, PM_DMAE0
+  GPIO_PIN1,                //89          P7.1        digital, PM_C0OUT, PM_TA0CLK
+  GPIO_PIN2,                //90          P7.2        digital, PM_C1OUT, PM_TA1CLK
   GPIO_PIN3,                //91          P7.3        digital, PM_TA0.0
   NotAPin,                  //92          PJ.4        digital, TDI
   NotAPin,                  //93          PJ.5        digital, TD0, SWO

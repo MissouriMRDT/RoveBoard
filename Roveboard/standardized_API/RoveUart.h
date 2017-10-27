@@ -45,7 +45,7 @@ extern roveUart_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, si
 extern roveUart_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read);
 
 //clears out the uart receive and transmit buffers
-extern roveUart_ERROR roveUartFlush(roveUART_Handle uart);
+extern roveUart_ERROR roveUartFlushAll(roveUART_Handle uart);
 
 //reads bytes from a uart port
 //inputs: reference of a setup uart module from roveUartOpen, a pointer to the buffer to read into
@@ -80,6 +80,8 @@ extern uint16_t roveUartGetBufferLength(roveUART_Handle uart);
 //input: a function to run when a receive interrupt is generated. The function itself should have one input that will be
 //       filled with arguments by the uart module. The argument will contain the index of the module that interrupted
 //note: You can usually attach multiple callbacks if desired. The maximum amount is hardware specific
+//warning: It's a good idea not to make these too slow to run; if the uart is constantly receiving a lot of messages, it might
+//lead to the callbacks hogging the processor and even having data thrown out due to the receive FIFO being overloaded in the meantime
 extern void roveUartAttachReceiveCb(void (*userFunc)(uint8_t moduleThatReceived));
 
 //attaches a function to run whenever a module is finished transmitting a message or messages, on top of the functions the uart module
@@ -89,8 +91,9 @@ extern void roveUartAttachReceiveCb(void (*userFunc)(uint8_t moduleThatReceived)
 //note: You can usually attach multiple callbacks if desired. The maximum amount is hardware specific
 extern void roveUartAttachTransmitCb(void (*userFunc)(uint8_t moduleThatTransmitted));
 
+
 //for deprecated libraries
-#define roveBoard_UART_open(x, y)		roveUartOpen(x, y)
+#define roveBoard_UART_open(x, y, z, a)		roveUartOpen(x, y, z, a)
 #define roveBoard_UART_write(x, y, z)	roveUartWrite(x, y, z)
 #define roveBoard_UART_available(x)		roveUartAvailable(x)
 #define roveBoard_UART_read(x, y, z)	roveUartRead(x, y, z)

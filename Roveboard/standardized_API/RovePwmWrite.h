@@ -16,6 +16,9 @@ typedef struct rovePwmWrite_Handle
   bool initialized;
   uint16_t index;
   uint16_t pin;
+  uint8_t alignment;
+  bool inverted;
+  uint8_t duty;
 
   rovePwmWrite_Handle()
   {

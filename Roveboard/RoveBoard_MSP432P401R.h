@@ -15,14 +15,16 @@
 #define __MSP432P401R__
 #endif
 
+#include "msp432p401r_API/SysInit/SysInit_MSP432P401R.h"
+static int dummySoThisRunsBeforeMain = (initSystem(), 0);
+
 #include "supportingUtilities/RoveUtilities.h"
 #include "supportingUtilities/Debug.h"
 #include "msp432p401r_API/Clocking/Clocking_MSP432P401R.h"
-#include "msp432p401r_API/SysInit/SysInit_MSP432P401R.h"
 #include "msp432p401r_API/Power/Power_MSP432P401R.h"
 #include "msp432p401r_API/RoveUart/RoveUart_MSP432P401R.h"
 #include "msp432p401r_API/RovePinMap_MSP432P401R.h"
-
-static int dummySoThisRunsBeforeMain = (initSystem(), 0);
+#include "msp432p401r_API/DigitalPin/DigitalPin_MSP432P401R.h"
+#include "msp432p401r_API/RovePwmWrite/RovePwmWrite_MSP432P401R.h"
 
 #endif /* ROVEBOARD_ROVEBOARD_MSP432P401R_H_ */

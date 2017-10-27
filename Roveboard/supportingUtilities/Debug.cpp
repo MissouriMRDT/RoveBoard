@@ -8,13 +8,13 @@
 #include <supportingUtilities/Debug.h>
 
 #ifdef ROVEDEBUG_PERMISSIVE
-void debugFault(char msg[])
+void debugFault(const char msg[])
 {
 }
 
 #else
 
-void debugFault(char msg[])
+void debugFault(const char msg[])
 {
   while(1)
   {
