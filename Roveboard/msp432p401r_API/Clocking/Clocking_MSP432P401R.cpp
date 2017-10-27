@@ -52,9 +52,9 @@ void initSystemClocks()
   //main clock set to use dco clock or HF external clock, 48Mhz which is its max. Used by CPU
   //sub-main clock set to use HF external clock or dco clock, 24Mhz which is its max. Used by periphs.
   //low-speed submain uses same clock as sub-main. Used by periphs
-  //aux and backup clocks default to LF external clock.
-  //set REFO to 128Khz since we already have the lfxt for ~37khz. Or if lfxt wasn't initialized, keep it at 128khz anyway since
-  //it can be easily divided into 37khz if we want
+  //aux and backup clocks also can be used by periphs. Set to REFO.
+  //set REFO to 128Khz since peripherals can divide it down from there themselves if they want a lower clock speed.
+  //Also, if the HFXT doesn't work, clocks that use it will default to using SYSOSC instead (5 Mhz)
   CS_setReferenceOscillatorFrequency(CS_REFO_128KHZ);
   if(hfxtGood == false)
   {
@@ -68,11 +68,8 @@ void initSystemClocks()
     CS_initClockSignal(CS_MCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_1);
     CS_initClockSignal(CS_HSMCLK, CS_HFXTCLK_SELECT, CS_CLOCK_DIVIDER_2);
   }
-  if(!lfxtGood)
-  {
-    CS_initClockSignal(CS_ACLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_2);
-    CS_initClockSignal(CS_BCLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_2);
-  }
+  CS_initClockSignal(CS_ACLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_1);
+  CS_initClockSignal(CS_BCLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_1);
   for(i = 0; i < 10000; i++);
 
   //
