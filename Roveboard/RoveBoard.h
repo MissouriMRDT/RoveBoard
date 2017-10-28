@@ -23,6 +23,8 @@
 #include "standardized_API/RovePermaMem.h"
 #include "supportingUtilities/RoveUtilities.h"
 #include "supportingUtilities/Debug.h"
+#include "supportingUtilities/lightTrig.h"
+
 
 
 #endif /* ROVEBOARD_ROVEBOARD_H_ */
