@@ -3,9 +3,9 @@
 
 
 //calculates taylor polynomial of sin of value
-float sinLW(int x);
+double sinLW(float x);
 
 //calculates taylor polynomial of cos of value
-float cosLW(int x);
+double cosLW(float x);
 
 #endif // LIGHTTRIG_H

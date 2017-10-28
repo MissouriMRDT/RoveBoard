@@ -27,6 +27,7 @@
 #include "tm4c1294ncpdt_API/RoveTimer/RoveTimer_TivaTM4C1294NCPDT.h"
 #include "tm4c1294ncpdt_API/RoveUart/RoveUart_TivaTm4c1294NCPDT.h"
 #include "tm4c1294ncpdt_API/RoveI2C/RoveI2C_TivaTM4C1294NCPDT.h"
+#include "supportingUtilities/lightTrig.h"
 
 static int dummySoThisRunsBeforeMain = (initSystem(), 0);
 
