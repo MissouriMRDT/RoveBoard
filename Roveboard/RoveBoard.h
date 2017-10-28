@@ -12,14 +12,15 @@
 #ifndef ROVEBOARD_ROVEBOARD_H_
 #define ROVEBOARD_ROVEBOARD_H_
 
-#include "prototype_API/Clocking.h"
-#include "prototype_API/DigitalPin.h"
-#include "prototype_API/RoveEthernet.h"
-#include "prototype_API/RoveI2C.h"
-#include "prototype_API/RovePwmRead.h"
-#include "prototype_API/RovePwmWrite.h"
-#include "prototype_API/RoveTimer.h"
-#include "prototype_API/RoveUart.h"
+#include "standardized_API/Clocking.h"
+#include "standardized_API/DigitalPin.h"
+#include "standardized_API/RoveEthernet.h"
+#include "standardized_API/RoveI2C.h"
+#include "standardized_API/RovePwmRead.h"
+#include "standardized_API/RovePwmWrite.h"
+#include "standardized_API/RoveTimer.h"
+#include "standardized_API/RoveUart.h"
+#include "standardized_API/RovePermaMem.h"
 #include "supportingUtilities/RoveUtilities.h"
 #include "supportingUtilities/Debug.h"
 #include "supportingUtilities/lightTrig.h"

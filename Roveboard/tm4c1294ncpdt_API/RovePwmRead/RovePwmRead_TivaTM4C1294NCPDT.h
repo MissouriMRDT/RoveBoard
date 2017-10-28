@@ -45,7 +45,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "prototype_API/RovePwmRead.h"
+#include "../../standardized_API/RovePwmRead.h"
 
 const int ReadModule0 = 0;
 const int ReadModule1 = 1;

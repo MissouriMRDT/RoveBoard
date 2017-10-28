@@ -1,8 +1,11 @@
-#include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
 #include "SysInit_TivaTM4C1294NCPDT.h"
+#include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
+#include "../RovePermaMem/RovePermaMem_Private.h"
+#include "supportingUtilities/Debug.h"
 #include "../tivaware/driverlib/rom.h"
 #include "../tivaware/driverlib/sysctl.h"
 #include "../tivaware/driverlib/fpu.h"
+
 
 static bool initialized = false;
 
@@ -35,6 +38,9 @@ void initSystem()
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOQ);
+
+    //turn on any roveboard stuff than needs pre-main initialization
+    rovePermaMem_Init();
 
     //let peripherals finish turning on
     delayMicroseconds(100);
