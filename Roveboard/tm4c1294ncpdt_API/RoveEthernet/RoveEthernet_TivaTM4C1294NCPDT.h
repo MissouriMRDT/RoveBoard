@@ -22,7 +22,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "../../standardized_API/RoveEthernet.h"
+#include "standardized_API/RoveEthernet.h"
 
 #define ROVE_IP_ADDR_NONE INADDR_NONE
 #define UDP_RX_MAX_PACKETS 32
@@ -33,6 +33,9 @@ void roveEthernet_NetworkingStart(roveIP myIP);
 
 //Start listening for UDP messages on a given port. Must be called before GetUdpMsg can be called.
 roveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port);
+
+//Stop listening for UDP messages.
+roveEthernet_Error roveEthernet_EndUdpSocket();
 
 //Sends a udp message to the destination IP and port
 roveEthernet_Error roveEthernet_SendUdpPacket(roveIP destIP, uint16_t destPort, const uint8_t* msg, size_t msgSize);

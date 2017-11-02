@@ -1,5 +1,7 @@
 // roveBoard.h for Tiva/Energia
 // Author: Gbenga Osibodu
+// Second Author: Drue Satterfield
+// Heavily based off of the Energia framwork's Ethernetclass and EthernetUdpclass
 
 #include "RoveEthernet_TivaTM4C1294NCPDT.h"
 #include <stdbool.h>
@@ -110,6 +112,12 @@ void roveEthernet_NetworkingStart(roveIP myIP)
 roveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port)
 {
   data._port = port;
+
+  if(data._pcb != 0)
+  {
+    stopUdp(); //catch attempts to re-init
+  }
+
   data._pcb = udp_new();
   err_t err = udp_bind(data._pcb, IP_ADDR_ANY, port);
 
@@ -118,6 +126,13 @@ roveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port)
 
 
   udp_recv(data._pcb, do_recv, &data);
+
+  return ROVE_ETHERNET_ERROR_SUCCESS;
+}
+
+roveEthernet_Error roveEthernet_EndUdpSocket()
+{
+  stopUdp();
 
   return ROVE_ETHERNET_ERROR_SUCCESS;
 }
@@ -300,49 +315,53 @@ void do_recv(void *args, struct udp_pcb *upcb, struct pbuf *p, struct ip_addr* a
   /* No more space in the receive queue */
   if(udp->count >= UDP_RX_MAX_PACKETS) {
     pbuf_free(p);
-    return;
   }
-
-  //run any user attached callbacks for receiving a udp packet
-  if(weHazCallbacks)
+  else
   {
-   uint8_t i;
-   uint16_t packetLength = p->len;
-   uint8_t buff[packetLength];
-   readUdpPacket(p, packetLength, buff);
-   bool keepPacket = true;
+    bool keepPacket = true;
 
-   for(i = 0; i < MaxCallbacks; i++)
-   {
-     if(receiveCbFuncs[i])
-     {
-       keepPacket = receiveCbFuncs[i](buff, packetLength);
-     }
-   }
+    //run any user attached callbacks for receiving a udp packet
+    if(weHazCallbacks)
+    {
+      uint8_t i;
+      uint16_t packetLength = p->len;
+      uint8_t buff[packetLength];
+      readUdpPacket(p, packetLength, buff);
 
-   if(keepPacket == false)
-   {
-     pbuf_free(p);
-     return;
-   }
+      for(i = 0; i < MaxCallbacks; i++)
+      {
+        if(receiveCbFuncs[i])
+        {
+          keepPacket = receiveCbFuncs[i](buff, packetLength);
+        }
+      }
+    }
+
+
+    if(keepPacket == false)
+    {
+      pbuf_free(p);
+    }
+    else
+    {
+      /* Increase the number of packets in the queue
+       * that are waiting for processing */
+      udp->count++;
+      /* Add pacekt to the rear of the queue */
+      udp->packets[udp->rear].p = p;
+      /* Record the IP address and port the pacekt was received from */
+      udp->packets[udp->rear].remoteIP = IPAddress(addr->addr);
+      udp->packets[udp->rear].remotePort = port;
+      udp->packets[udp->rear].destIP = IPAddress(ip_current_dest_addr()->addr);
+
+      /* Advance the rear of the queue */
+      udp->rear++;
+
+      /* Wrap around the end of the array was reached */
+      if(udp->rear == UDP_RX_MAX_PACKETS)
+        udp->rear = 0;
+    }
   }
-
-  /* Increase the number of packets in the queue
-   * that are waiting for processing */
-  udp->count++;
-  /* Add pacekt to the rear of the queue */
-  udp->packets[udp->rear].p = p;
-  /* Record the IP address and port the pacekt was received from */
-  udp->packets[udp->rear].remoteIP = IPAddress(addr->addr);
-  udp->packets[udp->rear].remotePort = port;
-  udp->packets[udp->rear].destIP = IPAddress(ip_current_dest_addr()->addr);
-
-  /* Advance the rear of the queue */
-  udp->rear++;
-
-  /* Wrap around the end of the array was reached */
-  if(udp->rear == UDP_RX_MAX_PACKETS)
-    udp->rear = 0;
 }
 
 static int readUdp(unsigned char* buffer, size_t len)
@@ -421,4 +440,5 @@ static int udpAvailable()
 static void stopUdp()
 {
   udp_remove(data._pcb);
+  data._pcb = 0;
 }
