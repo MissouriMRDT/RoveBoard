@@ -207,7 +207,7 @@ static void startEthernetHardware(IPAddress local_ip, IPAddress dns_server, IPAd
     else if((local_ip >> 29) == CLASS_C)
       subnet = CLASS_C_SUBNET;
   }
-  delayMicroseconds(100);
+  //delayMicroseconds(100); //causes hard faults on linux for some reason.
   lwIPInit(F_CPU, macArray, htonl(local_ip), htonl(subnet), htonl(gateway), !local_ip ? IPADDR_USE_DHCP:IPADDR_USE_STATIC);
   delayMicroseconds(100);
   lwIPDNSAddrSet((uint32_t)dns_server);
