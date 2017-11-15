@@ -8,7 +8,7 @@ Individual files: Varied
 
 This is rover's official Hardware Abstraction Layer (HAL), a series of functions designed to a) be able to be used on any microcontroller that rover uses (in theory, check which boards are supported and which types of functions they support further down) b) allow the programmer to work with the hardware on the microcontroller easily and accessibly with easy-to-read and understand function calls C) allow roveware files like RoveComm, which are designed to be used across rover, to be used on every microcontroller we're using by using the standardized functions provided in this framework, which are promised to work on every microcontroller that supports them.
 
-It's fairly similar to arduino or energia, if you know what those are (directly inspired by, in fact) but unlike those two, the functions in roveboard are well documented and flat out tell you WHAT parts of the hardware the functions use, without you having to know HOW they're carrying out the function. In this way, you know what's going on in the microcontroller when you use roveboard, while still getting the easy hardware-accessing functions to use. Also unlike the former two, each microcontroller not only has standardized functions provided for roveware files to use on every microcontroller that supports the hardware feature they use, but also a series of functions that take specific advantage of the board for main.cpp and related files to use if they wish. The latter functions will only work with their own processor, but that's perfectly fine for non-portable files like main.cpp.
+It's fairly similar to arduino or energia, if you know what those are (directly inspired by, in fact) but has been generally expanded and unlike those two, the functions in roveboard are well documented and flat out tell you WHAT parts of the hardware the functions use, without you having to know HOW they're carrying out the function. In this way, you know what's going on in the microcontroller when you use roveboard, while still getting the easy hardware-accessing functions to use. Also unlike the former two, each microcontroller not only has standardized functions provided for roveware files to use on every microcontroller that supports the hardware feature they use, but also a series of functions that take specific advantage of the board for main.cpp and related files to use if they wish. The latter functions will only work with their own processor, but that's perfectly fine for non-portable files like main.cpp.
 
 The framework is designed to be used by any IDE and c++ compiler as well (unless the compilers have different ideas of what constitutes acceptable c++), so you can take it with you wherever you go...except for energia, which needs and has its own specific version.
 
@@ -28,6 +28,7 @@ Be sure to read the wiki for more helpful things such as visual pinmaps.
 
 ## Supported microcontrollers and what features they implement
 * Tiva tm4c1294ncpdt - pwm writing, pwm reading, clocking, digital pin, Ethernet, Uart/serial, timerInterface, I2c, PermanentMemory(EEPROM version), ADC
+* Msp432P4O1R - clocking, digital pin, Uart/serial, and nonstandard Power API.
 
 
 ## Dependencies
