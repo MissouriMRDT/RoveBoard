@@ -105,6 +105,7 @@ roveAdc_Error roveAdc_startConversion(roveAdc_Handle handle);
 
 //Overview: Gets the raw data found after a conversion has been completed with the given adc instance.
 //Inputs:   An initialized adc instance, given from roveAdc_init, and a return-by-pointer variable that will contain the conversion data on return.
+//          retBuff values will be between 0 and 4095, representing 0 volts to VIN volts (almost certainly 3.3V)
 //returns:  ROVEADC_SUCCESS if data was successfully gotten, or ROVEADC_INCOMPLETE_CONVERSION if either the conversion is still in progress or
 //          if you never called startConversion before this in the first place.
 roveAdc_Error roveAdc_getConvResults(roveAdc_Handle handle, uint32_t *retBuff);
