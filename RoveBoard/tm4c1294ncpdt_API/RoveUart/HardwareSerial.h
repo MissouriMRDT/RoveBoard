@@ -82,6 +82,7 @@ class HardwareSerial
 		void end(void);
 		int available(void);
 		int peek(void);
+		int peek(uint16_t index);
 		int read(void);
 		void flush(void);
     void flushAll(void);

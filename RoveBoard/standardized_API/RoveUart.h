@@ -64,6 +64,11 @@ extern int roveUartAvailable(roveUART_Handle uart);
 //returns: the byte at the top of the uart's read buffer
 extern int roveUartPeek(roveUART_Handle uart);
 
+//checks what number (a byte) is at some index of the uart's read buffer, without actually taking it out of the buffer
+//inputs: reference of a setup uart module from roveUartOpen
+//returns: the byte at the index of the uart's read buffer, or -1 if there's nothing at that index
+extern int roveUartPeek(roveUART_Handle uart, uint16_t peekIndex);
+
 //sets how many bytes the uart module is allowed to use up when saving received messages.
 //inputs: reference of a setup uart module from roveUartOpen, and new length of the buffer.
 //WARNING: If downsizing the buffer size from its previous size, any data that was currently sitting in the buffer outside of the

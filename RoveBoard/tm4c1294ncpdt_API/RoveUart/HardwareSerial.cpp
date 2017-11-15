@@ -456,6 +456,30 @@ int HardwareSerial::available(void)
 		(rxWriteIndex - rxReadIndex) : rxBufferSize - (rxReadIndex - rxWriteIndex));
 }
 
+int HardwareSerial::peek(uint16_t index)
+{
+  uint8_t cChar;
+
+  //
+  // Check to see if there's anything to get
+  //
+  if(RX_BUFFER_EMPTY || index >= available())
+  {
+    return -1;
+  }
+
+  uint16_t tempRead = ((rxReadIndex) + index) % rxBufferSize;
+
+  //
+  // Read a character from the buffer.
+  //
+  cChar = rxBuffer[tempRead];
+  //
+  // Return the character to the caller.
+  //
+  return(cChar);
+}
+
 int HardwareSerial::peek(void)
 {
     unsigned char cChar = 0;

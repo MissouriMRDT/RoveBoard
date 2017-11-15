@@ -54,6 +54,24 @@ int roveUartPeek(roveUART_Handle uart)
 	return serial -> peek();
 }
 
+int roveUartPeek(roveUART_Handle uart, uint16_t peekIndex)
+{
+  if(uart.initialized == false)
+  {
+    debugFault("roveUartPeek: handle not initialized");
+  }
+
+  if(peekIndex == 0)
+  {
+    return roveUartPeek(uart);
+  }
+  else
+  {
+    HardwareSerial* serial = uartArray[uart.uart_index];
+    return serial -> peek(peekIndex);
+  }
+}
+
 roveUart_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read) {
   if(uart.initialized == false)
   {

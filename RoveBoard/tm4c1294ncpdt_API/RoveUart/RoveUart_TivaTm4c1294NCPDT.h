@@ -90,8 +90,13 @@ roveUart_ERROR roveUartFlushAll(roveUART_Handle uart);
 
 //checks what number (a byte) is at the top of the uart's read buffer, without actually taking it out of the buffer
 //inputs: reference of a setup uart module from roveUartOpen
-//returns: the byte at the top of the uart's read buffer
+//returns: the byte at the top of the uart's read buffer, or -1 if there's nothing in the buffer
 int roveUartPeek(roveUART_Handle uart);
+
+//checks what number (a byte) is at some index of the uart's read buffer, without actually taking it out of the buffer
+//inputs: reference of a setup uart module from roveUartOpen
+//returns: the byte at the index of the uart's read buffer, or -1 if there's nothing at that index
+int roveUartPeek(roveUART_Handle uart, uint16_t peekIndex);
 
 //sets up the specified uart to run at the specified baud rate
 //inputs: index of the uart module to run (0 for uart 0, 1 for uart 1...up to 7), baud rate in bits/second. Max is 7.5 Mb/s
