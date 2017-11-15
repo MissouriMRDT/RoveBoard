@@ -12,6 +12,6 @@
 
 //enters into an infinite loop, carrying a message about what caused the fault to happen.
 //note: You can avoid this by putting #define ROVEDEBUG_NO_DEBUG at the top of main
-void debugFault(char msg[]);
+void debugFault(const char msg[]);
 
 #endif /* ROVEBOARD_SUPPORTINGUTILITIES_DEBUG_H_ */
