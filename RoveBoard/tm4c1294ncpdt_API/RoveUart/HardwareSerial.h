@@ -89,6 +89,7 @@ class HardwareSerial
 		void UARTIntHandler(void);
 		size_t write(uint8_t c);
 		size_t write(const uint8_t *buffer, size_t size);
+		size_t println(const char* str);
 		operator bool();
 		void setOutputSettings(uint8_t paritySettings, uint8_t stopBitSettings, uint8_t wordLengthSettings);
 };

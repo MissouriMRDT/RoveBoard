@@ -535,6 +535,19 @@ size_t HardwareSerial::write(const uint8_t *buffer, size_t size)
   return n;
 }
 
+size_t HardwareSerial::println(const char* str)
+{
+  int i = 0;
+  size_t cnt = 0;
+  while(str[i] != 0)
+  {
+    write(str[i]);
+    cnt++;
+  }
+
+  return cnt;
+}
+
 size_t HardwareSerial::write(uint8_t c)
 {
 
