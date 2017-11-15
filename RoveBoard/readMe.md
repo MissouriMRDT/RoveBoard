@@ -33,6 +33,7 @@ Be sure to read the wiki for more helpful things such as visual pinmaps.
 
 ## Dependencies
 * Note that all external dependencies can be downloading via links in this repo's wiki section.
+* The Msp432P4O1R uses the SMSIS framework, which itself requires you to compile using an IAR, KEIL, generic ARM, GCC, or TI-CCS compiler.
 
 ## Usage
 1) In your main.cpp, before anything else include the roveboard_x.h file for the processor you're using
