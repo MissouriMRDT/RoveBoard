@@ -820,7 +820,7 @@ static RoveI2C_Error transferHandleError(uint32_t i2cBase, uint32_t stopControl)
   errorGot = transferHandleError(i2cBase);
   if(errorGot != I2CERROR_NONE && errorGot != I2CERROR_TIMEOUT)
   {
-    I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
+    I2CMasterControl(i2cBase, stopControl);
   }
 
   return errorGot;
