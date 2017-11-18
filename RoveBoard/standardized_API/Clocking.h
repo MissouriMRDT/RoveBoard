@@ -17,6 +17,11 @@
 //returns the main cpu clock's frequency in hz
 extern uint32_t getCpuClockFreq();
 
+#ifdef __cplusplus
+extern "C" { //so that pure c files can use these functions without compilation errors
+#endif
+
+
 //delays for some amount of milliseconds
 //input: milliseconds to delay
 extern void delay(uint32_t millis);
@@ -32,5 +37,9 @@ extern uint32_t millis();
 //returns amount of microseconds since program started (max length of measureable time
 //before it overflows back to 0 is hardware specific)
 extern uint32_t micros();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

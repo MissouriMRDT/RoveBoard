@@ -1269,11 +1269,11 @@ lwIPNetworkConfigChange(uint32_t ui32IPAddr, uint32_t ui32NetMask,
 bool lwIPDHCPWaitLeaseValid()
 {
 	unsigned long _timeout = 60000;
-	unsigned long startTime = cmillis();
+	unsigned long startTime = millis();
 
 	while(g_sNetIF.dhcp->state != DHCP_BOUND) {
-		cdelay(10);
-		if(((cmillis() - startTime) > _timeout))
+		delay(10);
+		if(((millis() - startTime) > _timeout))
 			return false;
 	};
 

@@ -62,7 +62,6 @@ uint32_t setCpuClockFreq(uint32_t newFrequency)
   MAP_SysTickDisable();
   MAP_SysTickPeriodSet(F_CPU / SystickHz);
   MAP_SysTickEnable();
-
   return(F_CPU);
 }
 
@@ -139,15 +138,6 @@ void registerSysTickCb(void (*userFunc)(uint32_t))
 			break;
 		}
 	}
-}
-
-void cdelay(uint32_t millis)
-{
-  return delay(millis);
-}
-uint32_t cmillis()
-{
-  return millis();
 }
 
 /* still in testing

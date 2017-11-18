@@ -14,7 +14,7 @@
 static void SysTickIntHandler();
 static bool needChangeVoltageStateFirst(uint32_t desiredCpuFreq, uint32_t desiredPeriphFreq);
 static void selectOptimalVoltageState(uint32_t cpuFreq, uint32_t periphFreq);
-static uint32_t setClockFreq(int64_t newFrequency, uint32_t clockToSet);
+static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet);
 
 static const uint16_t SystickIntPriority = 0x80;
 static uint32_t milliseconds = 0;
@@ -207,11 +207,11 @@ static void selectOptimalVoltageState(uint32_t cpuFreq, uint32_t periphFreq)
   }
 }
 
-static uint32_t setClockFreq(int64_t newFrequency, uint32_t clockToSet)
+static uint32_t setClockFreq(uint32_t newFrequency, uint32_t clockToSet)
 {
   uint32_t mainClockSourceFreq;
   uint32_t mainClockSource;
-  int64_t hfxtComputedFreq;
+  uint32_t hfxtComputedFreq;
   uint32_t dcoComputedFreq;
   uint32_t firmwareDivisor;
   uint32_t cpuFreq;
