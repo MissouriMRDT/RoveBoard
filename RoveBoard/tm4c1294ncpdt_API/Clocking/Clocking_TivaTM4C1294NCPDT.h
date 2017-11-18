@@ -46,10 +46,6 @@ void registerSysTickCb(void (*userFunc)(uint32_t));
 //Values lower than 0x40 slow it down, greater speeds it up. 0x40 returns it to default calibration.
 //void calibratePiosc(uint16_t calValue); still in testing
 
-#ifdef __cplusplus
-extern "C" { //so that pure c files (like RoveEthernet's underside) can use these functions without compilation errors
-#endif
-
 //delays for some amount of milliseconds, theoretically up to however many desired but be reasonable; don't delay for tens of minutes.
 //For extremely long delays, it's better to use a while loop with the millis() function.
 //input: milliseconds to delay
@@ -68,7 +64,15 @@ uint32_t millis();
 uint32_t micros();
 
 #ifdef __cplusplus
+extern "C" { //so that pure c files (like RoveEthernet's underside) can use these functions without compilation errors
+#endif
+
+void cdelay(uint32_t millis);
+uint32_t cmillis();
+
+#ifdef __cplusplus
 }
 #endif
+
 
 #endif
