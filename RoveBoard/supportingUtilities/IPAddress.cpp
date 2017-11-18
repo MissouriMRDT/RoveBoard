@@ -1,4 +1,4 @@
-#include <string.h>
+#include <String.h>
 #include <supportingUtilities/IPAddress.h>
 
 const IPAddress INADDR_NONE(0,0,0,0);

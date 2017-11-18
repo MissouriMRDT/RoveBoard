@@ -5,7 +5,7 @@
 
 #include "RoveEthernet_TivaTM4C1294NCPDT.h"
 #include <stdbool.h>
-#include <string.h>
+#include <String.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <tm4c1294ncpdt_API/RoveEthernet/lwipLibrary/arch/lwiplib.h>

@@ -1,5 +1,5 @@
 #include "DigitalPin_MSP432P401R.h"
-#include "../msp432Ware/driverlib/driverlib.h"
+#include "../msp432ware/driverlib/driverlib.h"
 
 static bool validatePin(uint8_t pinNumber, uint8_t * pinMask, uint32_t *portBase);
 
