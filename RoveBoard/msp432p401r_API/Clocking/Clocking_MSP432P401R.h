@@ -63,10 +63,6 @@ uint32_t getCpuClockFreq();
 //gets the current periph clock frequency in hz
 uint32_t getPeriphClockFreq();
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //delays for some amount of milliseconds. System still operational in the background and interrupts will keep firing.
 void delay(uint32_t millis);
 
@@ -78,9 +74,5 @@ uint32_t millis();
 
 //gets how many microseconds have passed since the beginning of the program.
 uint32_t micros();
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
