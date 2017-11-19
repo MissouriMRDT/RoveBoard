@@ -361,8 +361,8 @@ typedef volatile struct
 {
   uint32_t tOn;
   uint32_t tOff;
-  int64_t tr;
-  int64_t tf;
+  int64_t tRise;
+  int64_t tFall;
   uint8_t duty;
   uint32_t timerLoad;
   uint32_t portBase;
@@ -398,13 +398,6 @@ static void edgeCaptureGenHandler(timerData * data, uint32_t timerBase);
 static bool initGPIO(uint8_t portLetter, uint8_t pinNum, uint8_t * pinInitState, uint32_t * port_base, uint8_t * pin_macro);
 static bool initTimer(uint32_t frequency, uint8_t timerNum);
 static void initData(uint8_t timerNum, uint32_t timerLoad, uint8_t pinInitState, uint32_t port_base, uint8_t pin_macro);
-
-//second layer of main functions
-static bool initPwmRead(char gpioPort, uint8_t pinNumber);
-static void stopPwmRead(char portLetter, uint8_t pinNumber);
-static uint8_t getDuty(char portLetter, uint8_t pinNumber);
-static uint32_t getTotalPeriod_us(char portLetter, uint8_t pinNumber);
-static uint32_t getOnPeriod_us(char portLetter, uint8_t pinNumber);
 
 //pass in a gpioport letter and number such as 'a' and '2', and it returns
 //which timer is associated from it, 1 - 5. Returns 0 if no timer uses that pin port and pin number
@@ -563,8 +556,8 @@ static void timeoutGenHandler(timerData * data)
       if((GPIOPinRead(portBase, pinMacro) & pinMacro) == 0) //Pin low. transmission ended/0% duty. Put data back into init state
       {
         //Serial.println("Resetting due to 0%");
-        data->tr = 0;
-        data->tf = 0;
+        data->tRise = 0;
+        data->tFall = 0;
         data->tOn = 0;
         data->tOff = 0;
         data->duty = 0;
@@ -578,8 +571,8 @@ static void timeoutGenHandler(timerData * data)
       else
       {
         //Serial.println("Resetting due to 100%");
-        data->tr = 0;
-        data->tf = 0;
+        data->tRise = 0;
+        data->tFall = 0;
         data->tOn = 0;
         data->tOff = 0;
         data->duty = 100;
@@ -622,15 +615,15 @@ static void edgeCaptureGenHandler(timerData * data, uint32_t timerBase)
   if((GPIOPinRead(portBase, pinMacro) & pinMacro) > 0)
   {
     data->pinState = pulseH;
-    data->tr = (int64_t)((uint32_t)valueFirst16 + (uint32_t)((uint32_t)valueLast8 << 16)); //put the two together into one 24 bit value
+    data->tRise = (int64_t)((uint32_t)valueFirst16 + (uint32_t)((uint32_t)valueLast8 << 16)); //put the two together into one 24 bit value
 
-    //if the newly read value is less than the last recorded val, timer reset in between readings. For calculation of tOff, set tf down the timer period
-    if(data->tr <  data->tf)
+    //if the newly read value is less than the last recorded val, timer reset in between readings. For calculation of tOff, set tFall down the timer period
+    if(data->tRise <  data->tFall)
     {
-      data->tf -= (int64_t)data->timerLoad;
+      data->tFall -= (int64_t)data->timerLoad;
     }
 
-    data->tOff = (uint32_t)(data->tr -  data->tf);
+    data->tOff = (uint32_t)(data->tRise - data->tFall);
 
     if(data->periodIncalculable == false) //if period was incalculable for some edge-case condition, then skip doing the duty math this cycle around
     {
@@ -646,7 +639,7 @@ static void edgeCaptureGenHandler(timerData * data, uint32_t timerBase)
 
 
   //if the last capture was a rising edge, then this is a falling edge capture. 
-  //Timer value is tf, calculate tOn with time of newest value of falling edge
+  //Timer value is tFall, calculate tOn with time of newest value of falling edge
   //minus value of last rising edge.
   else
   {
@@ -654,14 +647,14 @@ static void edgeCaptureGenHandler(timerData * data, uint32_t timerBase)
           
     if(data->periodIncalculable == false) //if period is noted to be incalculable this cycle, skip it
     { 
-      data->tf = (int64_t)((uint32_t)valueFirst16 + (uint32_t)((uint32_t)valueLast8 << 16));
+      data->tFall = (int64_t)((uint32_t)valueFirst16 + (uint32_t)((uint32_t)valueLast8 << 16));
       
-      if(data->tf < data->tr)
+      if(data->tFall < data->tRise)
       {
-        data->tr -= (int64_t)data->timerLoad;
+        data->tRise -= (int64_t)data->timerLoad;
       }
 
-      data->tOn = (uint32_t)(data->tf - data->tr);     
+      data->tOn = (uint32_t)(data->tFall - data->tRise);
     }
   }
 }
@@ -674,6 +667,12 @@ rovePwmRead_Handle initPwmRead(uint8_t readingModule, uint8_t mappedPin)
 		debugFault("initPwmRead: mapped pin too large");
 	}
 	
+  uint32_t timerLoad = 16777215; //2^24 - 1, max load
+  uint32_t portBase;
+  uint8_t pinMacro;
+  uint8_t timerNumber;
+  uint8_t pinInitialState;
+
 	char gpioPort = pinMapToPort[mappedPin];
 	if(gpioPort == 0) //0 is error value for this table
 	{
@@ -691,10 +690,10 @@ rovePwmRead_Handle initPwmRead(uint8_t readingModule, uint8_t mappedPin)
     debugFault("initPwmRead: pwm read module doesn't use that pin");
 	}
 
-	if(!initPwmRead(gpioPort, pinNumber))
-	{
-	  debugFault("initPwmRead: other error");
-	}
+	timerNumber = getTimerNumber(gpioPort, pinNumber);
+  initGPIO(gpioPort, pinNumber, &pinInitialState, &portBase, &pinMacro);
+  initData(timerNumber, timerLoad, pinInitialState, portBase, pinMacro);
+  initTimer(timerLoad, timerNumber);
 
 	rovePwmRead_Handle handle;
 
@@ -702,48 +701,6 @@ rovePwmRead_Handle initPwmRead(uint8_t readingModule, uint8_t mappedPin)
 	handle.mappedPin = mappedPin;
 
 	return(handle);
-}
-
-//Begins reading pwm pulses on the specified pin. Inits timer, interrupts, GPIO pins, 
-//and data for the pwm reading.
-//Input: The pin number 0-7
-//       The pin port, which for timers 1-5 is A,B,D,L, or M
-//Output: True if initialized successfully, false if error
-//occured (most likely you input a parameter at an incorrect value)
-static bool initPwmRead(char gpioPort, uint8_t pinNumber)
-{
-  bool successfulInit;
-  uint8_t pinInitialState;
-
-  uint32_t timerLoad = 16777215; //2^24 - 1, max load
-  uint32_t portBase;
-  uint8_t pinMacro;
-  uint8_t timerNumber;
-
-  timerNumber = getTimerNumber(gpioPort, pinNumber);
-  
-  if(timerNumber > NumberOfTimersUsed) //can only use timers 0-5
-  {
-    return(false);
-  }
-  
-  successfulInit = initGPIO(gpioPort, pinNumber, &pinInitialState, &portBase, &pinMacro);
-
-  if(successfulInit == false)
-  {
-    return (false) ;
-  }
-  
-  initData(timerNumber, timerLoad, pinInitialState, portBase, pinMacro);
-  
-  successfulInit = initTimer(timerLoad, timerNumber);   
-
-  if(successfulInit == false)
-  {
-    return(false);
-  }
-
-  return(true);
 }
 
 //wrapper for internal stopPwmRead function, added layer to allow 
@@ -756,28 +713,9 @@ void stopPwmRead(rovePwmRead_Handle handle)
   }
 
   uint8_t mappedPin = handle.mappedPin;
-	
-	char gpioPort = pinMapToPort[mappedPin];
-	if(gpioPort == 0) //0 is error value for this table
-	{
-		return;
-	}
-	
-	uint8_t pinNumber = pinMapToPinNum[mappedPin];
-	if(pinNumber == 255)
-	{
-		return; //255 is error value for this table
-	}
-	
-	stopPwmRead(gpioPort, pinNumber);
-}
-
-//Stops reading pwm. 
-//Input: The port letter and pin number of the pin to cease 
-//reading pwm on
-static void stopPwmRead(char portLetter, uint8_t pinNumber)
-{
-  uint32_t timerBase = 0;
+  uint8_t pinNumber = pinMapToPinNum[mappedPin];
+	char portLetter = pinMapToPort[mappedPin];
+	uint32_t timerBase = 0;
   uint8_t timerNum;
   uint32_t portBase;
   int16_t portRefNum;
@@ -786,22 +724,10 @@ static void stopPwmRead(char portLetter, uint8_t pinNumber)
   
   timerData * datas [NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
 
-  //get the port base for the passed letter
   portRefNum = getPortRefNum(portLetter);
-  if(portRefNum == -1)
-  {
-    return;
-  }
   portBase = pinPortBaseTable[portRefNum];
-
-  //get the pin number macro for the passed pin number
-  if(!(pinNumber <= 7))
-  {
-    return;
-  }
   pinMacro = pinMacroTable[pinNumber];
 
-  
   for(int i = 0; i < NumberOfTimersUsed; i++)
   {
     uint32_t dataPortBase = datas[i] -> portBase;
@@ -813,11 +739,6 @@ static void stopPwmRead(char portLetter, uint8_t pinNumber)
       dataUsed = datas[i];
       timerNum = i + 1;
     }
-  }
-
-  if(timerBase == 0)
-  {
-    return;
   }
   
   TimerDisable(timerBase, TIMER_BOTH);
@@ -838,52 +759,18 @@ uint8_t getDuty(rovePwmRead_Handle handle)
   }
 
   uint8_t mappedPin = handle.mappedPin;
-	
-	char gpioPort = pinMapToPort[mappedPin];
-	if(gpioPort == 0) //0 is error value for this table
-	{
-		return(false);
-	}
-	
+	char portLetter = pinMapToPort[mappedPin];
 	uint8_t pinNumber = pinMapToPinNum[mappedPin];
-	if(pinNumber == 255)
-	{
-		return(false); //255 is error value for this table
-	}
-	
-	return(getDuty(gpioPort, pinNumber));
-}
-
-//gets the duty cycle being read on the specified pin.
-//Input: The port letter and pin number of the pin
-//Output: 0-100 duty cycle
-static uint8_t getDuty(char portLetter, uint8_t pinNumber)
-{
-  //uint32_t timerBase = 0;
-  //uint8_t timerNum;
   uint32_t portBase;
   int16_t portRefNum;
   uint8_t pinMacro;
   uint8_t duty;
-  bool dataFound = false;
-  
   timerData * datas [NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
-
+  
   //get the port base for the passed letter
   portRefNum = getPortRefNum(portLetter);
-  if(portRefNum == -1)
-  {
-    return 0;
-  }
   portBase = pinPortBaseTable[portRefNum];
-
-  //get the pin number macro for the passed pin number
-  if(!(pinNumber <= 7))
-  {
-    return 0;
-  }
   pinMacro = pinMacroTable[pinNumber];
-
   
   for(int i = 0; i < NumberOfTimersUsed; i++)
   {
@@ -892,14 +779,8 @@ static uint8_t getDuty(char portLetter, uint8_t pinNumber)
     
     if(portBase == dataPortBase && pinMacro == dataPinMacro)
     {
-      dataFound = true;
       duty = datas[i] -> duty;
     }
-  }
-
-  if(dataFound == false)
-  {
-    return 0;
   }
 
   return(duty);
@@ -915,54 +796,20 @@ uint32_t getTotalPeriod_us(rovePwmRead_Handle handle)
   }
 
   uint8_t mappedPin = handle.mappedPin;
-	
-	char gpioPort = pinMapToPort[mappedPin];
-	if(gpioPort == 0) //0 is error value for this table
-	{
-		return(false);
-	}
-	
+	char portLetter = pinMapToPort[mappedPin];
 	uint8_t pinNumber = pinMapToPinNum[mappedPin];
-	if(pinNumber == 255)
-	{
-		return(false); //255 is error value for this table
-	}
-	
-	return(getTotalPeriod_us(gpioPort, pinNumber));
-}
-
-//gets the total period of the PWM signal last transmitted for 
-//the specified pin
-//Input: The port letter and pin number of the pin
-//Output: period of last transmission in microseconds
-static uint32_t getTotalPeriod_us(char portLetter, uint8_t pinNumber)
-{
-  //uint32_t timerBase = 0;
   uint32_t totalPeriod_us;
-  //uint8_t timerNum;
   uint32_t portBase;
   int16_t portRefNum;
   uint8_t pinMacro;
-  //uint8_t duty;
   uint32_t tOn;
   uint32_t tOff;
-  bool dataFound = false;
-  
   timerData * datas [NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
+
 
   //get the port base for the passed letter
   portRefNum = getPortRefNum(portLetter);
-  if(portRefNum == -1)
-  {
-    return 0;
-  }
   portBase = pinPortBaseTable[portRefNum];
-
-  //get the pin number macro for the passed pin number
-  if(!(pinNumber <= 7))
-  {
-    return 0;
-  }
   pinMacro = pinMacroTable[pinNumber];
   
   for(int i = 0; i < NumberOfTimersUsed; i++)
@@ -972,18 +819,10 @@ static uint32_t getTotalPeriod_us(char portLetter, uint8_t pinNumber)
     
     if(portBase == dataPortBase && pinMacro == dataPinMacro)
     {
-      dataFound = true;
-      //duty = datas[i] -> duty;
       tOff = datas[i] -> tOff;
       tOn = datas[i] -> tOn;
     }
   }
-
-  if(dataFound == false)
-  {
-    return 0;
-  }
-
 
   //tOff + tOn = period in timer clock ticks (assumed to be using system clock). Divided by SysClockFreq = period in seconds. Times 1,000,000 = period in microseconds
   float period_ticks = tOn + tOff;
@@ -1002,53 +841,18 @@ uint32_t getOnPeriod_us(rovePwmRead_Handle handle)
   }
 
   uint8_t mappedPin = handle.mappedPin;
-	
-	char gpioPort = pinMapToPort[mappedPin];
-	if(gpioPort == 0) //0 is error value for this table
-	{
-		return(false);
-	}
-	
+	char portLetter = pinMapToPort[mappedPin];
 	uint8_t pinNumber = pinMapToPinNum[mappedPin];
-	if(pinNumber == 255)
-	{
-		return(false); //255 is error value for this table
-	}
- 
-	return(getOnPeriod_us(gpioPort, pinNumber));
-}
-
-//Gets the on period of the last tramsittted PWM signal for
-//the specified pin
-//Input: The port letter and pin number of the pin
-//Output: On-period of pulse in microseconds
-static uint32_t getOnPeriod_us(char portLetter, uint8_t pinNumber)
-{
-  //uint32_t timerBase = 0;
-  //uint32_t totalPeriod_us;
-  //uint8_t timerNum;
   uint32_t portBase;
   int16_t portRefNum;
   uint8_t pinMacro;
-  //uint8_t duty;
   uint32_t tOn;
-  bool dataFound = false;
   uint32_t onPeriod_us;
   timerData * datas [NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
   
   //get the port base for the passed letter
   portRefNum = getPortRefNum(portLetter);
-  if(portRefNum == -1)
-  {
-    return 0;
-  }
   portBase = pinPortBaseTable[portRefNum];
-
-  //get the pin number macro for the passed pin number
-  if(!(pinNumber <= 7))
-  {
-    return 0;
-  }
   pinMacro = pinMacroTable[pinNumber];
   
   for(int i = 0; i < NumberOfTimersUsed; i++)
@@ -1058,22 +862,15 @@ static uint32_t getOnPeriod_us(char portLetter, uint8_t pinNumber)
     
     if(portBase == dataPortBase && pinMacro == dataPinMacro)
     {
-      dataFound = true;
-      //duty = datas[i] -> duty;
       tOn = datas[i] -> tOn;
     }
   }
 
-  if(dataFound == false)
-  {
-    return 0;
-  }
-    
   float onPeriod_s = (float)tOn / SysClockFreq;
+
   //tOn = on period in timer clock ticks (assumed to be using system clock). Divided by SysClockFreq = period in seconds. Times 1,000,000 = period in microseconds
   onPeriod_us = (uint32_t)(onPeriod_s * 1000000.0);
   return(onPeriod_us);
-  
 }
 
 //returns the reference number choresponding to the port letter passed.
@@ -1149,8 +946,8 @@ static void initData(uint8_t timerNum, uint32_t timerLoad, uint8_t pinInitState,
   {
     data[timerNum] -> tOn = 0;
     data[timerNum] -> tOff = 0;
-    data[timerNum] -> tr = 0;
-    data[timerNum] -> tf = 0;
+    data[timerNum] -> tRise = 0;
+    data[timerNum] -> tFall = 0;
     data[timerNum] -> duty = 0;
     data[timerNum] -> portBase = port_base;
     data[timerNum] -> pinMacro = pin_macro;

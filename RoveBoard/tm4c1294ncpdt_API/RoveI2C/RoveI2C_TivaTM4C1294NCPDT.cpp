@@ -446,7 +446,7 @@ RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_
 
   //send more of the data, up till the last byte, using the
   //BURST_SEND_CONT command of the I2C module
-  for(uint32_t i = 0; i < (msgSize) - 1; i++)
+  for(uint32_t i = 0; i < msgSize; i++)
   {
     //put next piece of data into I2C FIFO
     I2CMasterDataPut(i2cBase, msg[i]);
@@ -455,6 +455,11 @@ RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_
     if(i == 0)
     {
       I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_SEND_START);
+    }
+    else if(i == msgSize - 1)
+    {
+      //send next data that was just placed into FIFO
+      I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_SEND_FINISH);
     }
     else
     {
@@ -469,14 +474,7 @@ RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_
     }
   }
 
-  //put last piece of data into I2C FIFO
-  I2CMasterDataPut(i2cBase, msg[msgSize-1]);
-
-  //send next data that was just placed into FIFO
-  I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_SEND_FINISH);
-
-  //do data transfer with slave
-  return transferHandleError(i2cBase);
+  return I2CERROR_NONE;
 }
 
 RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg[], size_t msgSize)
@@ -582,6 +580,15 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uin
   bool receive = true;
   RoveI2C_Error errorGot;
 
+  if(sizeOfReceive == 0)
+  {
+    return I2CERROR_NONE;
+  }
+  else if(sizeOfReceive == 1)
+  {
+    return roveI2cReceive(handle, SlaveAddr, buffer);
+  }
+
   //specify that we are going to read from slave device
   I2CMasterSlaveAddrSet(i2cBase, SlaveAddr, receive);
 
@@ -591,12 +598,17 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uin
     return(I2CERROR_BUSY);
   }
 
-  for(uint32_t i = 0; i < (sizeOfReceive) - 1; i++)
+  for(uint32_t i = 0; i < sizeOfReceive; i++)
   {
     //receive control byte and read from the register we specified earlier
     if(i == 0)
     {
       I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_RECEIVE_START);
+    }
+    else if(i == sizeOfReceive - 1)
+    {
+      //finish transfer
+      I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
     }
     else
     {
@@ -616,17 +628,7 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uin
     }
   }
 
-  //send next data that was just placed into FIFO
-  I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
-
-  //do data transfer with slave
-  errorGot = transferHandleError(i2cBase, I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP);
-  if(errorGot == I2CERROR_NONE)
-  {
-    //return data pulled from specified register
-    receivedData [sizeOfReceive-1] = I2CMasterDataGet(i2cBase);
-  }
-  return errorGot;
+  return I2CERROR_NONE;
 }
 
 RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr,  uint8_t reg, uint8_t* buffer, size_t sizeOfReceive)
@@ -635,6 +637,15 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr,  ui
   uint32_t i2cBase = i2cIndexToI2cBase[handle.index];
   bool receive = false;
   RoveI2C_Error errorGot;
+
+  if(sizeOfReceive == 0)
+  {
+    return I2CERROR_NONE;
+  }
+  else if(sizeOfReceive == 1)
+  {
+    return roveI2cReceive(handle, SlaveAddr, reg, buffer);
+  }
 
   //specify that we are writing (a register address) to the
   //slave device
@@ -664,12 +675,17 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr,  ui
   //specify that we are going to read from slave device
   I2CMasterSlaveAddrSet(i2cBase, SlaveAddr, receive);
 
-  for(uint32_t i = 0; i < (sizeOfReceive) - 1; i++)
+  for(uint32_t i = 0; i < sizeOfReceive; i++)
   {
     //receive control byte and read from the register we specified earlier
     if(i == 0)
     {
       I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_RECEIVE_START);
+    }
+    else if(i == sizeOfReceive - 1)
+    {
+      //finish receive
+      I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
     }
     else
     {
@@ -689,17 +705,7 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr,  ui
     }
   }
 
-  //finish receive
-  I2CMasterControl(i2cBase, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
-
-  //do data transfer with slave
-  errorGot = transferHandleError(i2cBase);
-  if(errorGot == I2CERROR_NONE)
-  {
-    //return data pulled from specified register
-    receivedData [sizeOfReceive-1] = I2CMasterDataGet(i2cBase);
-  }
-  return errorGot;
+  return I2CERROR_NONE;
 }
 
 // Enable and initialize the I2C0 master module.  Use the system clock for
