@@ -1,15 +1,15 @@
-#include "RoveI2C_TivaTM4C1294NCPDT.h"
-#include "supportingUtilities/Debug.h"
-#include "../RovePinMap_TivaTM4C1294NCPDT.h"
-#include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
-#include "../tivaware/driverlib/pin_map.h"
-#include "../tivaware/inc/hw_i2c.h"
-#include "../tivaware/inc/hw_memmap.h"
-#include "../tivaware/inc/hw_types.h"
-#include "../tivaware/inc/hw_gpio.h"
-#include "../tivaware/driverlib/i2c.h"
-#include "../tivaware/driverlib/sysctl.h"
-#include "../tivaware/driverlib/gpio.h"
+#include <supportingUtilities/Debug.h>
+#include <tm4c1294ncpdt_API/Clocking/Clocking_TivaTM4C1294NCPDT.h>
+#include <tm4c1294ncpdt_API/RoveI2C/RoveI2C_TivaTM4C1294NCPDT.h>
+#include <tm4c1294ncpdt_API/RovePinMap_TivaTM4C1294NCPDT.h>
+#include <tm4c1294ncpdt_API/tivaware/driverlib/gpio.h>
+#include <tm4c1294ncpdt_API/tivaware/driverlib/i2c.h>
+#include <tm4c1294ncpdt_API/tivaware/driverlib/pin_map.h>
+#include <tm4c1294ncpdt_API/tivaware/driverlib/sysctl.h>
+#include <tm4c1294ncpdt_API/tivaware/inc/hw_gpio.h>
+#include <tm4c1294ncpdt_API/tivaware/inc/hw_i2c.h>
+#include <tm4c1294ncpdt_API/tivaware/inc/hw_memmap.h>
+#include <tm4c1294ncpdt_API/tivaware/inc/hw_types.h>
 
 static void masterInitExpClk(uint32_t ui32Base, RoveI2C_Speed speed);
 static void initVerifyInput(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin);
@@ -784,8 +784,13 @@ static RoveI2C_Error transferHandleError(uint32_t i2cBase)
 {
   bool timedOut = false;
 
-  //wait for MCU to start transaction
-  while(!I2CMasterBusy(i2cBase));
+  uint64_t mics = micros();
+
+  //wait for MCU to start transaction or it times out
+  while(!I2CMasterBusy(i2cBase) && !timedOut)
+  {
+    timedOut = (micros() - mics > 10000);
+  }
 
   // Wait until MCU is done transferring or it times out.
   while(I2CMasterBusy(i2cBase) && !timedOut)
@@ -793,6 +798,11 @@ static RoveI2C_Error transferHandleError(uint32_t i2cBase)
     //check to see if the clock out bit in the master control register has been set or not; if it has, then
     //the device has held the clock line low for too long and the module needs reset
     timedOut = (HWREG(i2cBase + I2C_O_MCS) & I2C_MCS_CLKTO) > 0 ? true: false;
+
+    if(!timedOut)
+    {
+      timedOut = (micros() - mics > 10000);
+    }
   }
 
   if(timedOut)

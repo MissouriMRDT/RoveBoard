@@ -14,6 +14,10 @@
  * by another master or if they detect an error in transmission. The one holdup will be if the slave(s) tries to hold the clock line
  * low; after a period of time, the function will time out in this condition. The timeout value is 1/(baud rate / 4080) seconds.
  *
+ * A secondary timeout is included for security purposes; if for any reason the module takes more than 10 milliseconds to transmit a byte,
+ * or to get started in the first place, the function will automatically return and report a timeout error. See the below warning on 
+ * what to do in this situation.
+ *
  * Module     clock/SCL pin(s)    data/SDA pin(s)
  *   0              PB_2              PB_3
  *   1              PG_0              PG_1
