@@ -1,4 +1,4 @@
-#include <tm4c1294ncpdt_API/DigitalPin/DigitalPin_TivaTM4C1294NCPDT.h>
+#include "tm4c1294ncpdt_API/DigitalPin/DigitalPin_TivaTM4C1294NCPDT.h"
 #include "../tivaware/driverlib/gpio.h"
 #include "../tivaware/driverlib/sysctl.h"
 #include "../tivaware/inc/hw_gpio.h"

@@ -703,9 +703,11 @@ bool adcStartConv(seq_conf& config)
   }
 
   ADCIntClear(config.adc, config.sequencer);
+  while((ADCIntStatus(config.adc, config.sequencer, false) > 0)); //let processor clear flag
+
   ADCProcessorTrigger(config.adc, config.sequencer);
 
-  SysCtlDelay(1); //processor never starts conversion without it for some reason. Delays for a whopping 3 instruction cycles
+  SysCtlDelay(100); //processor never starts conversion without it for some reason.
   return true;
 }
 
