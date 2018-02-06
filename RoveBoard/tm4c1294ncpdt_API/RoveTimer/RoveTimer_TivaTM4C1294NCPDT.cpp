@@ -5,9 +5,10 @@
  * the actual functions that use the struct currently only let you use TimerA because I got lazy and the logic got weird in my head.
  */
 
-#include "RoveTimer_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/RoveTimer/RoveTimer_TivaTM4C1294NCPDT.h"
 #include "supportingUtilities/Debug.h"
 #include "../tivaware/driverlib/timer.h"
+#define PART_TM4C1294NCPDT
 #include "../tivaware/inc/hw_memmap.h"
 #include "../tivaware/driverlib/interrupt.h"
 #include "../tivaware/driverlib/sysctl.h"
@@ -101,7 +102,7 @@ static TimerData timer5Data(Timer5, 0, 0, 0, 0, 0, 0, TIMER5_BASE, SYSCTL_PERIPH
 static TimerData timer6Data(Timer6, 0, 0, 0, 0, 0, 0, TIMER6_BASE, SYSCTL_PERIPH_TIMER6, INT_TIMER6A, INT_TIMER6B, timer6AHandler, timer6BHandler);
 static TimerData timer7Data(Timer7, 0, 0, 0, 0, 0, 0, TIMER7_BASE, SYSCTL_PERIPH_TIMER7, INT_TIMER7A, INT_TIMER7B, timer7AHandler, timer7BHandler);
 
-roveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t timerTimeout_us)
+roveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t timerTimeout_us, void (*interruptFunc)(void))
 {
   assertTimerId(timerId);
   assertInterruptId(interruptId);
@@ -110,6 +111,8 @@ roveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t tim
  
   setupTimerData(timerData, interruptId, timerTimeout_us);
   
+  timerData->attachedAFunction = interruptFunc;
+
   //enable timer hardware
   SysCtlPeripheralEnable(timerData->timerPeriphId);
 
@@ -178,19 +181,6 @@ void stopTimer(roveTimer_Handle handle)
   TimerIntDisable(timerData->timerBase, timerData->timerAInterrupt);
 }
 
-void attachTimerInterrupt(roveTimer_Handle handle, void (*interruptFunc)(void) )
-{
-  if(handle.initialized == false)
-  {
-    debugFault("startTimer: timer handle not initialized");
-  }
-
-  uint16_t timerId = handle.index;
-  TimerData * timerData = getTimerData(timerId);
-  
-  timerData->attachedAFunction = interruptFunc;
-}
-
 static TimerData* getTimerData(uint8_t timerId)
 {
   switch(timerId)
@@ -220,7 +210,7 @@ static TimerData* getTimerData(uint8_t timerId)
       return &timer7Data;
 
     default:
-	 return 0;
+   return 0;
   }
 }
 

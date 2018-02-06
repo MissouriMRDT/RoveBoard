@@ -31,11 +31,11 @@ const uint8_t Timer7 = 7;
 #define TimerPeriodicInterrupt 0
 
 //sets up the specified timer to generate the specified interrupt at a specified rate
-//Input: Timer Id, the interruptId based on above constants, and how frequently
-//the timer runs the interrupt in microseconds.
+//Input: Timer Id, the interruptId based on above constants, how frequently
+//the timer runs the interrupt in microseconds, and the function to run when the timer times out.
 //Min is 1 us, max is about 268 seconds
 //Warning: Function enters a fault infinite loop if arguments are incorrect (if timerId or interruptId aren't one of the above consts)
-roveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t timerTimeout_us);
+roveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t timerTimeout_us, void (*interruptFunc)(void));
 
 //begins timer operation
 //inputs: handle of the timer to start
