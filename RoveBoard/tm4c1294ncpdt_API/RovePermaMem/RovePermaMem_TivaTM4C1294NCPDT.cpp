@@ -5,24 +5,41 @@
  *      Author: drue
  */
 
-#include "RovePermaMem_TivaTM4C1294NCPDT.h"
-#include "RovePermaMem_Private.h"
 #include <string.h>
+#include <tm4c1294ncpdt_API/RovePermaMem/RovePermaMem_Internal.h>
+#include <tm4c1294ncpdt_API/RovePermaMem/RovePermaMem_TivaTM4C1294NCPDT.h>
 #include "../tivaware/driverlib/eeprom.h"
+#include "../tivaware/driverlib/sysctl.h"
 #include "supportingUtilities/Debug.h"
+
+typedef uint32_t word_t;
 
 //blocks 0 to 5 are reserved for roveboard stuff. Block 0 especially, being reserved for this file.
 //Users can input 0 to 89, but in reality it gets shifted up to 6 to 95
 static const uint8_t BlockIndex_ReservedBlocks = 6;
 static const uint8_t BlockIndex_ControlBlock = 0;
+static const uint32_t InitFootprintKeyword = 0x0000FEFE;
 
-//variables from rovePermaMem_Private. Noted in comment for viewing
-/*const uint8_t BlockReferenceTableSize = 3;
+const uint8_t BlockReferenceTableSize = 3;
 const word_t DummyMaskInLastWordOfTable = 0b11111111111111111111111111000000;
 const uint32_t ControlBlockPassword = 0x0000EFFE;
 const uint8_t WordLengthInBytes = 4;
-static const uint8_t ControlBlock_WordOffset_blockFresh = 1 * WordLengthInBytes; //actually goes from 1 to 3
-static const uint8_t ControlBlock_WordLength_blockFresh = 3 * WordLengthInBytes;*/
+
+//block 0 contains all the rovepermamem information. Each block contains 64 bytes, IE 16 words of 4 bytes length.
+//First word is reserved to put our initialized footprint into so that we know this eeprom has been initialized before.
+//Second, third, and fourth words are all devoted towards keeping track of how many of the blocks are still in their factory state.
+//Finally, we keep a table in RAM to remember what blocks have been allocated by app layer functions that request them.
+static const uint8_t BlockAddress_ControlBlock = 0;
+static const uint8_t ControlBlock_WordOffset_initFootprint = 0 * WordLengthInBytes;
+static const uint8_t ControlBlock_WordLength_initFootprint = WordLengthInBytes;
+const uint8_t ControlBlock_WordOffset_blockFresh = 1 * WordLengthInBytes; //actually goes from 1 to 3
+const uint8_t ControlBlock_WordLength_blockFresh = 3 * WordLengthInBytes;
+
+word_t tm4c1294ncpdt_blockFreshTable[BlockReferenceTableSize];
+word_t tm4c1294ncpdt_blockUsedTable[BlockReferenceTableSize];
+
+static void doFirstInit();
+static void setupGlobalTables();
 
 static const uint8_t BytesPerBlock = 64;
 static const uint8_t TotalBlocks = 96 - BlockIndex_ReservedBlocks;
@@ -230,6 +247,7 @@ RovePermaMem_Block rovePermaMem_useBlock(uint16_t blockReference, uint16_t passw
   return block;
 }
 
+
 bool rovePermaMem_getFirstAvailableBlock(bool onlyGetFreshBlocks, uint16_t startingBlock, uint16_t *ret_blockReference)
 {
   if(startingBlock >= TotalBlocks)
@@ -247,14 +265,14 @@ bool rovePermaMem_getFirstAvailableBlock(bool onlyGetFreshBlocks, uint16_t start
 
   word_t blockUnusedTable[BlockReferenceTableSize];
 
-  //blockUsedTable has a 1 for every used and 0 for unused, so invert it to get an unused table.
+  //tm4c1294ncpdt_blockUsedTable has a 1 for every used and 0 for unused, so invert it to get an unused table.
   //while we're at it, let's save ourselves another for loop and initialize j_start
   for(i = 0; i < BlockReferenceTableSize; i++)
   {
-    blockUnusedTable[i] = ~(blockUsedTable[i]);
+    blockUnusedTable[i] = ~(tm4c1294ncpdt_blockUsedTable[i]);
   }
 
-  //blockUsedTable lists a 0 for all dummy values which get turned into 1 for the unused table.
+  //tm4c1294ncpdt_blockUsedTable lists a 0 for all dummy values which get turned into 1 for the unused table.
   //set them back to 0 to make it look like they're used so the search algorithm won't select them
   blockUnusedTable[BlockReferenceTableSize - 1] &= DummyMaskInLastWordOfTable;
 
@@ -284,7 +302,7 @@ bool rovePermaMem_getFirstAvailableBlock(bool onlyGetFreshBlocks, uint16_t start
       bitBand = blockCountToBitbandWord(j);
       if(bitBand & blockUnusedTable[i])
       {
-        if(!onlyGetFreshBlocks || (bitBand & blockFreshTable[i]))
+        if(!onlyGetFreshBlocks || (bitBand & tm4c1294ncpdt_blockFreshTable[i]))
         {
           *ret_blockReference = j + i * bitsPerWord;
           break;
@@ -374,11 +392,11 @@ static bool isBlockFreshOrUsed(uint16_t blockReference, bool whichToGet)
 
   if(whichToGet == getFresh)
   {
-    blockTable = blockFreshTable;
+    blockTable = tm4c1294ncpdt_blockFreshTable;
   }
   else
   {
-    blockTable = blockUsedTable;
+    blockTable = tm4c1294ncpdt_blockUsedTable;
   }
 
   //global table is expressed in words
@@ -411,11 +429,11 @@ static uint16_t getTotalUnusedOrFreshBlocks(bool whichToGet)
 
   if(whichToGet == getFresh)
   {
-    tableReference = blockFreshTable;
+    tableReference = tm4c1294ncpdt_blockFreshTable;
   }
   else
   {
-    tableReference = blockUsedTable;
+    tableReference = tm4c1294ncpdt_blockUsedTable;
   }
 
   //90 total available blocks, but kept in an array of 32 bits. So, search through the array by checking
@@ -494,11 +512,11 @@ static void updateUseTable(uint16_t blockReference, bool setUse)
 
   if(!setUse)
   {
-    blockUsedTable[tableIndex] &= ~bitband;
+    tm4c1294ncpdt_blockUsedTable[tableIndex] &= ~bitband;
   }
   else
   {
-    blockUsedTable[tableIndex] |= bitband;
+    tm4c1294ncpdt_blockUsedTable[tableIndex] |= bitband;
   }
 }
 
@@ -531,7 +549,78 @@ static void updateFreshTable(uint16_t blockReference)
   }
 
   bitband = blockCountToBitbandWord(blockReference);
-  blockFreshTable[tableIndex] &= ~bitband;
-  EEPROMProgram(blockFreshTable, EEPROMAddrFromBlock(BlockIndex_ControlBlock) + ControlBlock_WordOffset_blockFresh, ControlBlock_WordLength_blockFresh);
+  tm4c1294ncpdt_blockFreshTable[tableIndex] &= ~bitband;
+  EEPROMProgram(tm4c1294ncpdt_blockFreshTable, EEPROMAddrFromBlock(BlockIndex_ControlBlock) + ControlBlock_WordOffset_blockFresh, ControlBlock_WordLength_blockFresh);
 }
 
+void rovePermaMem_Init()
+{
+  uint32_t readValue;
+
+  //try turning on the eeprom
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+  if(EEPROMInit() == EEPROM_INIT_ERROR)
+  {
+    SysCtlDelay(1000);
+    if(EEPROMInit() == EEPROM_INIT_ERROR)
+    {
+      debugFault("EEPROM has suffered from fatal internal error. This could mean its lifespan has been exceeded");
+    }
+  }
+
+  //check if this is the first the eeprom has ever been used. If so, initialize it with our startup settings.
+  //Either way, by default EEPROM starts off letting us read and write to blocks that aren't password protected (and none are password
+  //protected on reset) so we can just get straight to business
+  EEPROMRead(&readValue, BlockAddress_ControlBlock + ControlBlock_WordOffset_initFootprint, ControlBlock_WordLength_initFootprint);
+  if(readValue != InitFootprintKeyword)
+  {
+    doFirstInit();
+  }
+
+  //make sure to set up the tables the non private files use before leaving
+  setupGlobalTables();
+
+  //set up protection so that nothing can access the EEPROM's blocks unless a password has been set for said blocks and is used.
+  //Used to make the whole thing thread safe even with interrupts, as even if interrupted in the middle of a RovePermaMem function call
+  //other parts of the program still wont' be able to mess with the EEPROM.
+  EEPROMBlockProtectSet(BlockAddress_ControlBlock, EEPROM_PROT_NA_LNA_URW);
+
+  //lock all blocks in the system by writing a password to block 0 and locking it, which locks the whole system until we unlock block 0 again
+  uint32_t writeVal = ControlBlockPassword;
+  EEPROMBlockPasswordSet(BlockAddress_ControlBlock, &writeVal, 1);
+  EEPROMBlockLock(BlockAddress_ControlBlock);
+}
+
+static void doFirstInit()
+{
+  uint32_t writeValArray[3];
+
+  //make sure that blockInformation word is set to our default state.
+  writeValArray[0] = 0xFFFFFFFF;
+  writeValArray[1] = 0xFFFFFFFF;
+  writeValArray[2] = 0xFFFFFFC0; //only set up to the 89th block, rest are dummy values
+  EEPROMProgram(writeValArray, BlockAddress_ControlBlock + ControlBlock_WordOffset_blockFresh, ControlBlock_WordLength_blockFresh);
+
+  //set our footprint into the block we've allocated for it, so that we'll know on next startup that this operation was performed.
+  writeValArray[0] = InitFootprintKeyword;
+  EEPROMProgram(writeValArray, BlockAddress_ControlBlock + ControlBlock_WordOffset_initFootprint, ControlBlock_WordLength_initFootprint);
+}
+
+static void setupGlobalTables()
+{
+  int i;
+
+  //the table that tracks what blocks are being used starts off completely empty, as no blocks have yet to
+  //be declared in use on startup
+  for(i = 0; i < BlockReferenceTableSize; i++)
+  {
+    tm4c1294ncpdt_blockUsedTable[i] = 0;
+  }
+
+  //block fresh table, meanwhile, comes from control block's word registers 1, 2, and 3
+  EEPROMRead(tm4c1294ncpdt_blockFreshTable, BlockAddress_ControlBlock + ControlBlock_WordOffset_blockFresh, ControlBlock_WordLength_blockFresh);
+
+  //should have already erased the dummy values in the eeprom's first initialization, but let's sanity check it everytime we turn it
+  //on after. DummyMask sets them all to 0
+  tm4c1294ncpdt_blockFreshTable[2] &= DummyMaskInLastWordOfTable;
+}

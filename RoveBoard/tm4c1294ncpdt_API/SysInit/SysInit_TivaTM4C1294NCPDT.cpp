@@ -1,6 +1,6 @@
 #include "SysInit_TivaTM4C1294NCPDT.h"
 #include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
-#include "../RovePermaMem/RovePermaMem_Private.h"
+#include "../RovePermaMem/RovePermaMem_Internal.h"
 #include "supportingUtilities/Debug.h"
 #include "../tivaware/driverlib/rom.h"
 #include "../tivaware/driverlib/sysctl.h"
