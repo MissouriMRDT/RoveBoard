@@ -5,10 +5,10 @@ static bool validatePin(uint8_t pinNumber, uint8_t * pinMask, uint32_t *portBase
 
 bool digitalPinRead(uint8_t pinNumber)
 {
-  return digitalPinRead(pinNumber, Input);
+  return digitalPinReadMode(pinNumber, Input);
 }
 
-bool digitalPinRead(uint8_t pinNumber, uint8_t inputMode)
+bool digitalPinReadMode(uint8_t pinNumber, uint8_t inputMode)
 {
   uint8_t pinMask;
   uint32_t portBase;
@@ -52,10 +52,10 @@ bool digitalPinRead(uint8_t pinNumber, uint8_t inputMode)
 
 bool digitalPinWrite(uint8_t pinNumber, bool outputLevel)
 {
-  return digitalPinWrite(pinNumber, outputLevel, Output);
+  return digitalPinWriteMode(pinNumber, outputLevel, Output);
 }
 
-bool digitalPinWrite(uint8_t pinNumber, bool outputLevel, uint8_t outputMode)
+bool digitalPinWriteMode(uint8_t pinNumber, bool outputLevel, uint8_t outputMode)
 {
   if(outputMode != Output)
   {

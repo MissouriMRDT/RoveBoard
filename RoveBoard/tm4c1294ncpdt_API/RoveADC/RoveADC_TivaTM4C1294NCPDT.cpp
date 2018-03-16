@@ -472,7 +472,7 @@ bool adcSeqInit(seq_conf& config, adc_conf& adc_info, uint8_t sequencerNum, uint
   return true;
 }
 
-roveAdc_Handle roveAdc_init(uint16_t module, uint8_t pin)
+RoveAdc_Handle roveAdc_init(uint16_t module, uint8_t pin)
 {
   uint8_t channel = pin_to_adc_chan[pin];
   uint8_t sequencer;
@@ -627,7 +627,7 @@ roveAdc_Handle roveAdc_init(uint16_t module, uint8_t pin)
     addAdcChannel(channel, seqToConf, module - moduleOffset, endOfSequence);
   }
 
-  roveAdc_Handle handle;
+  RoveAdc_Handle handle;
   handle.index = module;
   handle.initialized = true;
 
@@ -735,7 +735,7 @@ bool adcGetConvResult(seq_conf& config)
   }
 }
 
-roveAdc_Error roveAdc_getConvResults(roveAdc_Handle handle, uint32_t *retBuff)
+RoveAdc_Error roveAdc_getConvResults(RoveAdc_Handle handle, uint32_t *retBuff)
 {
   if(handle.initialized == false)
   {
@@ -809,7 +809,7 @@ roveAdc_Error roveAdc_getConvResults(roveAdc_Handle handle, uint32_t *retBuff)
   return ROVEADC_SUCCESS;
 }
 
-roveAdc_Error roveAdc_startConversion(roveAdc_Handle handle)
+RoveAdc_Error roveAdc_startConversion(RoveAdc_Handle handle)
 {
   if(handle.initialized == false)
   {

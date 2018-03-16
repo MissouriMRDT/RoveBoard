@@ -410,7 +410,7 @@ RoveI2C_Error roveI2cSend(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t msg
   return transferHandleError(i2cBase);
 }
 
-RoveI2C_Error roveI2cSend(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg)
+RoveI2C_Error roveI2cSendReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg)
 {
   uint8_t compactedMsg[2];
   compactedMsg[0] = reg;
@@ -477,7 +477,7 @@ RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_
   return I2CERROR_NONE;
 }
 
-RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg[], size_t msgSize)
+RoveI2C_Error roveI2cSendBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg[], size_t msgSize)
 {
   //make an array big enough to hold the message plus the register address
   uint8_t compactedMsg[msgSize+1];
@@ -524,7 +524,7 @@ RoveI2C_Error roveI2cReceive(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t*
   return errorGot;
 }
 
-RoveI2C_Error roveI2cReceive(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t* buffer)
+RoveI2C_Error roveI2cReceiveReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t* buffer)
 {
   uint32_t i2cBase = i2cIndexToI2cBase[handle.index];
 
@@ -631,7 +631,7 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uin
   return I2CERROR_NONE;
 }
 
-RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr,  uint8_t reg, uint8_t* buffer, size_t sizeOfReceive)
+RoveI2C_Error roveI2cReceiveBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr,  uint8_t reg, uint8_t* buffer, size_t sizeOfReceive)
 {
   uint8_t* receivedData = buffer;
   uint32_t i2cBase = i2cIndexToI2cBase[handle.index];
@@ -644,7 +644,7 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr,  ui
   }
   else if(sizeOfReceive == 1)
   {
-    return roveI2cReceive(handle, SlaveAddr, reg, buffer);
+    return roveI2cReceiveReg(handle, SlaveAddr, reg, buffer);
   }
 
   //specify that we are writing (a register address) to the

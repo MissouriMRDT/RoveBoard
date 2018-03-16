@@ -34,6 +34,7 @@
 #include <inttypes.h>
 #include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
 #include "HardwareSerial.h"
+#include "../RovePinMap_TivaTM4C1294NCPDT.h"
 #include "../tivaware/inc/hw_memmap.h"
 #include "../tivaware/inc/hw_types.h"
 #include "../tivaware/inc/hw_ints.h"
@@ -92,40 +93,103 @@ static const unsigned long g_ulUARTPeriph[8] =
 // The list of UART GPIO configurations.
 //
 //*****************************************************************************
-static const unsigned long g_ulUARTConfig[8][2] =
-{
-
-    {GPIO_PA0_U0RX, GPIO_PA1_U0TX}, {GPIO_PB0_U1RX, GPIO_PB1_U1TX},
-    {GPIO_PA6_U2RX, GPIO_PA7_U2TX}, {GPIO_PA4_U3RX, GPIO_PA5_U3TX},
-    {GPIO_PK0_U4RX, GPIO_PK1_U4TX},	{GPIO_PC6_U5RX, GPIO_PC7_U5TX},
-	{GPIO_PP0_U6RX, GPIO_PP1_U6TX},	{GPIO_PC4_U7RX, GPIO_PC5_U7TX}
-
-};
-
-static const unsigned long g_ulUARTPort[8] =
-{
-#if defined(PART_TM4C1233H6PM) || defined(PART_LM4F120H5QR)
-	GPIO_PORTA_BASE, GPIO_PORTB_BASE, GPIO_PORTD_BASE, GPIO_PORTC_BASE,
-	GPIO_PORTC_BASE, GPIO_PORTE_BASE, GPIO_PORTD_BASE, GPIO_PORTE_BASE
-#elif defined(PART_TM4C129XNCZAD)
-	GPIO_PORTA_BASE, GPIO_PORTQ_BASE, GPIO_PORTD_BASE, GPIO_PORTA_BASE,
-	GPIO_PORTK_BASE, GPIO_PORTH_BASE, GPIO_PORTP_BASE, GPIO_PORTC_BASE
-#elif defined(PART_TM4C1294NCPDT) || defined(PART_TM4C129ENCPDT)
-	GPIO_PORTA_BASE, GPIO_PORTB_BASE, GPIO_PORTA_BASE, GPIO_PORTA_BASE,
-	GPIO_PORTK_BASE, GPIO_PORTC_BASE, GPIO_PORTP_BASE, GPIO_PORTC_BASE
-#else
-#error "**** No PART defined or unsupported PART ****"
-#endif
-};
-
-static const unsigned long g_ulUARTPins[8] =
-{
-
-    GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_0 | GPIO_PIN_1,
-    GPIO_PIN_6 | GPIO_PIN_7, GPIO_PIN_4 | GPIO_PIN_5,
-    GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_6 | GPIO_PIN_7,
-    GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_4 | GPIO_PIN_5
-
+static const uint32_t g_ulUARTConfig[] = {
+    0,          // dummy
+    0,          // 01 - 3.3v       X8_01
+    0,            // 02 - PE_4       X8_03
+    GPIO_PC4_U7RX,            // 03 - PC_4       X8_05
+    GPIO_PC5_U7TX,            // 04 - PC_5       X8_07
+    GPIO_PC6_U5RX,            // 05 - PC_6       X8_09
+    0,            // 06 - PE_5       X8_11
+    0,            // 07 - PD_3       X8_13
+    GPIO_PC7_U5TX,            // 08 - PC_7       X8_15
+    0,            // 09 - PB_2       X8_17
+    0,            // 10 - PB_3       X8_19
+    0,            // 11 - PP_2       X9_20
+    0,            // 12 - PN_3       X9_18
+    0,            // 13 - PN_2       X9_16
+    0,            // 14 - PD_0       X9_14
+    0,            // 15 - PD_1       X9_12
+    0,          // 16 - RST        X9_10
+    0,            // 17 - PH_3       X9_08
+    0,            // 18 - PH_2       X9_06
+    0,            // 19 - PM_3       X9_04
+    0,          // 20 - GND        X9_02
+    0,          // 21 - 5v         X8_02
+    0,          // 22 - GND        X8_04
+    0,            // 23 - PE_0       X8_06
+    0,            // 24 - PE_1       X8_08
+    0,            // 25 - PE_2       X8_10
+    0,            // 26 - PE_3       X8_12
+    0,            // 27 - PD_7       X8_14
+    GPIO_PA6_U2RX,            // 28 - PA_6       X8_16
+    0,            // 29 - PM_4       X8_18
+    0,            // 30 - PM_5       X8_20
+    0,            // 31 - PL_3       X9_19
+    0,            // 32 - PL_2       X9_17
+    0,            // 33 - PL_1       X9_15
+    0,            // 34 - PL_0       X9_13
+    0,            // 35 - PL_5       X9_11
+    0,            // 36 - PL_4       X9_09
+    0,            // 37 - PG_0       X9_07
+    0,            // 38 - PF_3       X9_05
+    0,            // 39 - PF_2       X9_03
+    0,            // 40 - PF_1       X9_01
+    0,          // 41 - 3.3v       X6_01
+    0,            // 42 - PD_2       X6_03
+    GPIO_PP0_U6RX,            // 43 - PP_0       X6_05
+    GPIO_PP1_U6TX,            // 44 - PP_1       X6_07
+    GPIO_PD4_U2RX,            // 45 - PD_4       X6_09
+    GPIO_PD5_U2TX,            // 46 - PD_5       X6_11
+    0,            // 47 - PQ_0       X6_13
+    0,            // 48 - PP_4       X6_15
+    0,            // 49 - PN_5       X6_17
+    0,            // 50 - PN_4       X6_19
+    0,            // 51 - PM_6       X7_20
+    0,            // 52 - PQ_1       X7_18
+    0,            // 53 - PP_3       X7_16
+    0,            // 54 - PQ_3       X7_14
+    0,            // 55 - PQ_2       X7_12
+    0,          // 56 - RESET      X7_10
+    GPIO_PA7_U2TX,            // 57 - PA_7       X7_08
+    0,            // 58 - PP_5       X7_06
+    0,            // 59 - PM_7       X7_04
+    0,          // 6Z - GND        X7_02
+    0,          // 61 - 5v         X6_02
+    0,          // 62 - GND        X6_04
+    0,            // 63 - PB_4       X6_06
+    0,            // 64 - PB_5       X6_08
+    GPIO_PK0_U4RX,            // 65 - PK_0       X6_10
+    GPIO_PK1_U4TX,            // 66 - PK_1       X6_12
+    0,            // 67 - PK_2       X6_14
+    0,            // 68 - PK_3       X6_16
+    GPIO_PA4_U3RX,            // 69 - PA_4       X6_18
+    GPIO_PA5_U3TX,            // 70 - PA_5       X6_20
+    0,            // 71 - PK_7       X7_19
+    0,            // 72 - PK_6       X7_17
+    0,            // 73 - PH_1       X7_15
+    0,            // 74 - PH_0       X7_13
+    0,            // 75 - PM_2       X7_11
+    0,            // 76 - PM_1       X7_09
+    0,            // 77 - PM_0       X7_07
+    0,            // 78 - PK_5       X7_05
+    0,            // 79 - PK_4       X7_03
+    0,            // 80 - PG_1       X7_01
+    0,            // 81 - PN_1       LED1
+    0,            // 82 - PN_0       LED2
+    0,            // 83 - PF_4       LED3
+    0,            // 84 - PF_0       LED4
+    GPIO_PJ0_U3RX,            // 85 - PJ_0       USR_SW1
+    GPIO_PJ1_U3TX,            // 86 - PJ_1       USR_SW2
+    0,            // 87 - PD_6       AIN5
+    GPIO_PA0_U0RX,            // 88 - PA_0       JP4
+    GPIO_PA1_U0TX,            // 89 - PA_1       JP5
+    GPIO_PA2_U4RX,            // 90 - PA_2       X11_06
+    GPIO_PA3_U4TX,            // 91 - PA_3       X11_08
+    0,            // 92 - PL_6       unrouted
+    0,            // 93 - PL_7       unrouted
+    GPIO_PB0_U1RX,            // 94 - PB_0       X11_58
+    GPIO_PB1_U1TX,            // 95 - PB_1       unrouted
 };
 
 // Constructors ////////////////////////////////////////////////////////////////
@@ -281,80 +345,81 @@ void HardwareSerial::setOutputSettings(uint8_t paritySettings, uint8_t stopBitSe
 }
 
 void
-HardwareSerial::begin(unsigned long baud)
+HardwareSerial::begin(unsigned long baud, unsigned int rxPin, unsigned int txPin)
 {
 	baudRate = baud;
-    //
-    // Initialize the UART.
-    //
-    SysCtlPeripheralEnable(g_ulUARTPeriph[uartModule]);
 
-    GPIOPinConfigure(g_ulUARTConfig[uartModule][0]);
-    GPIOPinConfigure(g_ulUARTConfig[uartModule][1]);
+  //
+  // Initialize the UART.
+  //
+  SysCtlPeripheralEnable(g_ulUARTPeriph[uartModule]);
 
-    GPIOPinTypeUART(g_ulUARTPort[uartModule], g_ulUARTPins[uartModule]);
+  GPIOPinConfigure(g_ulUARTConfig[txPin]);
+  GPIOPinConfigure(g_ulUARTConfig[rxPin]);
 
-    UARTConfigSetExpClk(UART_BASE, getCpuClockFreq(), baudRate,
-                            (UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE |
-                             UART_CONFIG_WLEN_8));
+  GPIOPinTypeUART(portRefToPortBase[pinToPortRef[txPin]], pinToPinMask[txPin] | pinToPinMask[rxPin]);
 
-    switch(UART_BASE)
-    {
-    	case UART0_BASE:
-    		UARTIntRegister(UART_BASE, UARTIntHandler0);
-			break;
+  UARTConfigSetExpClk(UART_BASE, getCpuClockFreq(), baudRate,
+                          (UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE |
+                           UART_CONFIG_WLEN_8));
 
-    	case UART1_BASE:
-			UARTIntRegister(UART_BASE, UARTIntHandler1);
-			break;
+  switch(UART_BASE)
+  {
+    case UART0_BASE:
+      UARTIntRegister(UART_BASE, UARTIntHandler0);
+    break;
 
-    	case UART2_BASE:
-			UARTIntRegister(UART_BASE, UARTIntHandler2);
-			break;
+    case UART1_BASE:
+    UARTIntRegister(UART_BASE, UARTIntHandler1);
+    break;
 
-    	case UART3_BASE:
-			UARTIntRegister(UART_BASE, UARTIntHandler3);
-			break;
+    case UART2_BASE:
+    UARTIntRegister(UART_BASE, UARTIntHandler2);
+    break;
 
-    	case UART4_BASE:
-			UARTIntRegister(UART_BASE, UARTIntHandler4);
-			break;
+    case UART3_BASE:
+    UARTIntRegister(UART_BASE, UARTIntHandler3);
+    break;
 
-    	case UART5_BASE:
-			UARTIntRegister(UART_BASE, UARTIntHandler5);
-			break;
+    case UART4_BASE:
+    UARTIntRegister(UART_BASE, UARTIntHandler4);
+    break;
 
-    	case UART6_BASE:
-			UARTIntRegister(UART_BASE, UARTIntHandler6);
-			break;
+    case UART5_BASE:
+    UARTIntRegister(UART_BASE, UARTIntHandler5);
+    break;
 
-    	case UART7_BASE:
-			UARTIntRegister(UART_BASE, UARTIntHandler7);
-			break;
-    }
+    case UART6_BASE:
+    UARTIntRegister(UART_BASE, UARTIntHandler6);
+    break;
 
-    //
-    // Set the UART to interrupt whenever a byte is transmitted or received
-    //
-    UARTFIFOLevelSet(UART_BASE, UART_FIFO_TX1_8, UART_FIFO_RX1_8);
-    flushAll();
-    UARTIntDisable(UART_BASE, 0xFFFFFFFF);
-    UARTIntEnable(UART_BASE, UART_INT_RX | UART_INT_RT);
-    IntEnable(g_ulUARTInt[uartModule]);
+    case UART7_BASE:
+    UARTIntRegister(UART_BASE, UARTIntHandler7);
+    break;
+  }
 
-    //
-    // Enable the UART operation.
-    //
-    UARTEnable(UART_BASE);
+  //
+  // Set the UART to interrupt whenever a byte is transmitted or received
+  //
+  UARTFIFOLevelSet(UART_BASE, UART_FIFO_TX1_8, UART_FIFO_RX1_8);
+  flushAll();
+  UARTIntDisable(UART_BASE, 0xFFFFFFFF);
+  UARTIntEnable(UART_BASE, UART_INT_RX | UART_INT_RT);
+  IntEnable(g_ulUARTInt[uartModule]);
 
-    if (txBuffer != (unsigned char *)0xFFFFFFFF)  // Catch attempts to re-init this Serial instance by freeing old buffer first
-      delete txBuffer;
-    if (rxBuffer != (unsigned char *)0xFFFFFFFF)  // Catch attempts to re-init this Serial instance by freeing old buffer first
-      delete rxBuffer;
-    txBuffer = new unsigned char [txBufferSize];
-    rxBuffer = new unsigned char [rxBufferSize];
+  //
+  // Enable the UART operation.
+  //
+  UARTEnable(UART_BASE);
 
-    SysCtlDelay(100);
+  if (txBuffer != (unsigned char *)0xFFFFFFFF)  // Catch attempts to re-init this Serial instance by freeing old buffer first
+    delete txBuffer;
+  if (rxBuffer != (unsigned char *)0xFFFFFFFF)  // Catch attempts to re-init this Serial instance by freeing old buffer first
+    delete rxBuffer;
+  txBuffer = new unsigned char [txBufferSize];
+  rxBuffer = new unsigned char [rxBufferSize];
+
+  SysCtlDelay(100);
 }
 
 void
@@ -397,33 +462,6 @@ HardwareSerial::setBufferSize(unsigned long buffSize)
 unsigned long HardwareSerial::getBufferSize()
 {
   return txBufferSize; //rx, tx share same buff size
-}
-
-void
-HardwareSerial::setModule(unsigned long module)
-{
-    UARTIntDisable(UART_BASE, UART_INT_RX | UART_INT_RT);
-    IntDisable(g_ulUARTInt[uartModule]);
-	uartModule = module;
-	begin(baudRate);
-
-}
-void
-HardwareSerial::setPins(unsigned long pins)
-{
-	if(pins == UART1_PORTB)
-	{
-		GPIOPinConfigure(GPIO_PB0_U1RX);
-		GPIOPinConfigure(GPIO_PB1_U1TX);
-		GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-	}
-	else
-	{
-		//Default UART1 Pin Muxing
-		GPIOPinConfigure(g_ulUARTConfig[1][0]);
-		GPIOPinConfigure(g_ulUARTConfig[1][1]);
-		GPIOPinTypeUART(g_ulUARTPort[1], g_ulUARTPins[1]);
-	}
 }
 
 HardwareSerial::operator bool()

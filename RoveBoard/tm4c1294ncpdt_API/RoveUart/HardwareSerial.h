@@ -74,11 +74,9 @@ class HardwareSerial
 	public:
 		HardwareSerial(void);
 		HardwareSerial(unsigned long);
-		void begin(unsigned long);
+		void begin(unsigned long baud, unsigned int rxPin, unsigned int txPin);
 		void setBufferSize(unsigned long);
 		unsigned long getBufferSize();
-		void setModule(unsigned long);
-		void setPins(unsigned long);
 		void end(void);
 		int available(void);
 		int peek(void);

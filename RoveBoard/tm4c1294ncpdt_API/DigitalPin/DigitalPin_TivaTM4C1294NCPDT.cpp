@@ -16,10 +16,10 @@ static uint32_t constToPinStrength[] = {GPIO_STRENGTH_2MA, GPIO_STRENGTH_4MA, GP
 
 bool digitalPinRead(uint8_t pinNumber)
 {
-  return digitalPinRead(pinNumber, Input);
+  return digitalPinReadMode(pinNumber, Input);
 }
 
-bool digitalPinRead(uint8_t pinNumber, uint8_t inputMode)
+bool digitalPinReadMode(uint8_t pinNumber, uint8_t inputMode)
 {
   uint8_t pinMask;
   uint32_t portBase;
@@ -65,15 +65,15 @@ bool digitalPinRead(uint8_t pinNumber, uint8_t inputMode)
 
 bool digitalPinWrite(uint8_t pinNumber, bool outputLevel)
 {
-  return digitalPinWrite(pinNumber, outputLevel, Output);
+  return digitalPinWriteMode(pinNumber, outputLevel, Output);
 }
 
-bool digitalPinWrite(uint8_t pinNumber, bool outputLevel, uint8_t outputMode)
+bool digitalPinWriteMode(uint8_t pinNumber, bool outputLevel, uint8_t outputMode)
 {
-  return digitalPinWrite(pinNumber, outputLevel, outputMode, MA_2);
+  return digitalPinWritePower(pinNumber, outputLevel, outputMode, MA_2);
 }
 
-bool digitalPinWrite(uint8_t pinNumber, bool outputLevel, uint8_t outputMode, uint8_t outputPowerLevel)
+bool digitalPinWritePower(uint8_t pinNumber, bool outputLevel, uint8_t outputMode, uint8_t outputPowerLevel)
 {
   uint8_t pinMask;
   uint32_t portBase;

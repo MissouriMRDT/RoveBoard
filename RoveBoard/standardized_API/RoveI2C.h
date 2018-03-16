@@ -64,7 +64,7 @@ extern RoveI2C_Error roveI2cSend(RoveI2C_Handle handle, uint16_t SlaveAddr, uint
 //       The address of the destination register within the slave device, from 0 to 255
 //       The message byte to transmit
 //returns: result of the transmission
-extern RoveI2C_Error roveI2cSend(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg);
+extern RoveI2C_Error roveI2cSendReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg);
 
 //sends a series of messages to a slave device, without specifying a destination register within the slave
 //input: The handle of the i2c module to use, gained from the init function
@@ -81,7 +81,7 @@ extern RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr,
 //       The message array to transmit
 //       The amount of messages in the array
 //returns: result of the transmission
-extern RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg[], size_t msgSize);
+extern RoveI2C_Error roveI2cSendBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg[], size_t msgSize);
 
 //requests a byte of information from a slave, without specifying a register within the slave to read from.
 //input: The handle of the i2c module to use, gained from the init function
@@ -96,7 +96,7 @@ extern RoveI2C_Error roveI2cReceive(RoveI2C_Handle handle, uint16_t SlaveAddr, u
 //       The address of the slave register to read from
 //       The variable, passed by pointer, to store the received byte into
 //returns: result of the transmission
-extern RoveI2C_Error roveI2cReceive(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t* buffer);
+extern RoveI2C_Error roveI2cReceiveReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t* buffer);
 
 //requests a series of bytes of information from a slave, without specifying a register within the slave to read from.
 //input: The handle of the i2c module to use, gained from the init function
@@ -113,6 +113,6 @@ extern RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAd
 //       The buffer to fill up with the received information
 //       The amount of bytes to receive
 //returns: result of the transmission
-extern RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr,  uint8_t reg, uint8_t* buffer, size_t sizeOfReceive);
+extern RoveI2C_Error roveI2cReceiveBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr,  uint8_t reg, uint8_t* buffer, size_t sizeOfReceive);
 
 #endif

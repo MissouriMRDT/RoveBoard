@@ -15,7 +15,7 @@
  * low; after a period of time, the function will time out in this condition. The timeout value is 1/(baud rate / 4080) seconds.
  *
  * A secondary timeout is included for security purposes; if for any reason the module takes more than 10 milliseconds to transmit a byte,
- * or to get started in the first place, the function will automatically return and report a timeout error. See the below warning on 
+ * or to get started in the first place, the function will automatically return and report a timeout error. See the below warning on
  * what to do in this situation.
  *
  * Module     clock/SCL pin(s)    data/SDA pin(s)
@@ -73,7 +73,7 @@ RoveI2C_Error roveI2cSend(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t msg
 //       The address of the destination register within the slave device, from 0 to 255
 //       The message byte to transmit
 //returns: result of the transmission
-RoveI2C_Error roveI2cSend(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg);
+RoveI2C_Error roveI2cSendReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg);
 
 //sends a series of messages to a slave device, without specifying a destination register within the slave
 //input: The handle of the i2c module to use, gained from the init function
@@ -90,7 +90,7 @@ RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_
 //       The message array to transmit
 //       The amount of messages in the array
 //returns: result of the transmission
-RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg[], size_t msgSize);
+RoveI2C_Error roveI2cSendBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t msg[], size_t msgSize);
 
 //requests a byte of information from a slave, without specifying a register within the slave to read from.
 //input: The handle of the i2c module to use, gained from the init function
@@ -105,7 +105,7 @@ RoveI2C_Error roveI2cReceive(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t*
 //       The address of the slave register to read from
 //       The variable, passed by pointer, to store the received byte into
 //returns: result of the transmission
-RoveI2C_Error roveI2cReceive(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t* buffer);
+RoveI2C_Error roveI2cReceiveReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t* buffer);
 
 //requests a series of bytes of information from a slave, without specifying a register within the slave to read from.
 //input: The handle of the i2c module to use, gained from the init function
@@ -122,6 +122,6 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uin
 //       The buffer to fill up with the received information
 //       The amount of bytes to receive
 //returns: result of the transmission
-RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr,  uint8_t reg, uint8_t* buffer, size_t sizeOfReceive);
+RoveI2C_Error roveI2cReceiveBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr,  uint8_t reg, uint8_t* buffer, size_t sizeOfReceive);
 
 #endif

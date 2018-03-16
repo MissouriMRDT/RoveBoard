@@ -35,18 +35,18 @@ const uint8_t Timer7 = 7;
 //the timer runs the interrupt in microseconds, and the function to run when the timer times out.
 //Min is 1 us, max is about 268 seconds
 //Warning: Function enters a fault infinite loop if arguments are incorrect (if timerId or interruptId aren't one of the above consts)
-roveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t timerTimeout_us, void (*interruptFunc)(void));
+RoveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t timerTimeout_us, void (*interruptFunc)(void));
 
 //begins timer operation
 //inputs: handle of the timer to start
-void startTimer(roveTimer_Handle handle);
+void startTimer(RoveTimer_Handle handle);
 
 //stops timer operation
 //inputs: handle of the timer to stop
-void stopTimer(roveTimer_Handle handle);
+void stopTimer(RoveTimer_Handle handle);
 
 //attaches a functions for the timer to run everytime it interrupts
 //inputs: handle of the timer to modify, an interrupt function to run
-void attachTimerInterrupt(roveTimer_Handle handle, void (*interruptFunc)(void) );
+void attachTimerInterrupt(RoveTimer_Handle handle, void (*interruptFunc)(void) );
 
 #endif

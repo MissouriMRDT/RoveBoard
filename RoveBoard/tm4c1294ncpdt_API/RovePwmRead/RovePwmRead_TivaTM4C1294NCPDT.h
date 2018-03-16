@@ -65,37 +65,37 @@ const uint8_t PwmReadTimeoutInterruptPriority_Default = 3;
 //Input: The pwmRead module to use, and which of its associated GPIO pins are to be used
 //Returns a rovePwmRead handle with internal settings initialized
 //warning: if the arguments are invalid, the function enters an infinite loop fault routine for checking in a debugger
-rovePwmRead_Handle initPwmRead(uint8_t readingModule, uint8_t mappedPin);
+RovePwmRead_Handle initPwmRead(uint8_t readingModule, uint8_t mappedPin);
 
 //Stops reading pwm. 
 //Input: The handle for the pwm reading instance to stop reading with
 //Note: initPwmRead must be called before hand
-void stopPwmRead(rovePwmRead_Handle handle);
+void stopPwmRead(RovePwmRead_Handle handle);
 
 //gets the duty cycle being read on the specified pin.
 //Input: The handle for the pwm reading instance to stop reading with
 //Note: initPwmRead must be called before hand
 //Output: 0-100 duty cycle
-uint8_t getDuty(rovePwmRead_Handle handle);
+uint8_t getDuty(RovePwmRead_Handle handle);
 
 //gets the total period of the PWM signal last transmitted for 
 //the specified pin
 //Input: The handle for the pwm reading instance to stop reading with
 //Note: initPwmRead must be called before hand
 //Output: period of last transmission in microseconds
-uint32_t getTotalPeriod_us(rovePwmRead_Handle handle);
+uint32_t getTotalPeriod(RovePwmRead_Handle handle, RovePwmRead_Scale scale);
 
 //Gets the on period of the last tramsittted PWM signal for
 //the specified pin
 //Input: The handle for the pwm reading instance to stop reading with
 //Note: initPwmRead must be called before hand
 //Output: On-period of pulse in microseconds
-uint32_t getOnPeriod_us(rovePwmRead_Handle handle);
+uint32_t getOnPeriod(RovePwmRead_Handle handle, RovePwmRead_Scale scale);
 
 //Sets the interrupt priority for the specified reading instance
 //Input: The handle for the pwm reading instance to modify, the priority of the edge capture, priority of timeout.
 //       The priority is between 0 and 7, with 0 being highest priority.
 //Note: initPwmRead must be called before hand
-void setPwmReadInterruptPriority(rovePwmRead_Handle handle, uint8_t edgeCapturePriority, uint8_t timeoutCapturePriority);
+void setPwmReadInterruptPriority(RovePwmRead_Handle handle, uint8_t edgeCapturePriority, uint8_t timeoutCapturePriority);
 
 #endif

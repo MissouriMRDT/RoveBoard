@@ -62,8 +62,8 @@ static bool validatePins(char module, char txPin, char rxPin)
   return false;
 }
 
-roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate, unsigned int txPin, unsigned int rxPin) {
-
+RoveUart_Handle roveUartOpen(uint8_t uart_index, uint32_t baud_rate, uint8_t txPin, uint8_t rxPin)
+{
   if(uart_index > 3)
   {
     debugFault("roveUartOpen: uart index is nonsense");
@@ -78,14 +78,14 @@ roveUART_Handle roveUartOpen(unsigned int uart_index, unsigned int baud_rate, un
   }
 
   uartArray[uart_index] -> begin(baud_rate, txPin, rxPin);
-  roveUART_Handle handle;
+  RoveUart_Handle handle;
   handle.uart_index = uart_index;
   handle.initialized = true;
 
   return handle;
 }
 
-roveUart_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, size_t bytes_to_write) {
+RoveUart_Error roveUartWrite(RoveUart_Handle uart, void* write_buffer, size_t bytes_to_write) {
   if(uart.initialized == false)
   {
     debugFault("roveUartWrite: handle not initialized");
@@ -115,7 +115,7 @@ roveUart_ERROR roveUartWrite(roveUART_Handle uart, void* write_buffer, size_t by
   return ROVE_UART_ERROR_SUCCESS;
 }
 
-int roveUartPeek(roveUART_Handle uart)
+int roveUartPeek(RoveUart_Handle uart)
 {
   if(uart.initialized == false)
   {
@@ -127,7 +127,7 @@ int roveUartPeek(roveUART_Handle uart)
   return serial -> peek();
 }
 
-int roveUartPeek(roveUART_Handle uart, uint16_t peekIndex)
+int roveUartPeekIndex(RoveUart_Handle uart, uint16_t peekIndex)
 {
   if(uart.initialized == false)
   {
@@ -145,7 +145,7 @@ int roveUartPeek(roveUART_Handle uart, uint16_t peekIndex)
   }
 }
 
-roveUart_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read) {
+RoveUart_Error roveUartRead(RoveUart_Handle uart, void* read_buffer, size_t bytes_to_read) {
   if(uart.initialized == false)
   {
     debugFault("roveUartRead: handle not initialized");
@@ -159,6 +159,7 @@ roveUart_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t byte
     return ROVE_UART_ERROR_UNKNOWN;
   }
 
+
   HardwareSerial* serial = uartArray[uart.uart_index];
 
   for (int i =0; i<bytes_to_read; i++) {
@@ -169,7 +170,7 @@ roveUart_ERROR roveUartRead(roveUART_Handle uart, void* read_buffer, size_t byte
   return ROVE_UART_ERROR_SUCCESS;
 }
 
-roveUart_ERROR roveUartReadNonBlocking(roveUART_Handle uart, void* read_buffer, size_t bytes_to_read)
+RoveUart_Error roveUartReadNonBlocking(RoveUart_Handle uart, void* read_buffer, size_t bytes_to_read)
 {
   if(roveUartAvailable(uart) < bytes_to_read)
   {
@@ -181,7 +182,7 @@ roveUart_ERROR roveUartReadNonBlocking(roveUART_Handle uart, void* read_buffer, 
   }
 }
 
-int roveUartAvailable(roveUART_Handle uart) {
+int roveUartAvailable(RoveUart_Handle uart) {
   if(uart.initialized == false)
   {
     debugFault("roveUartAvailable: handle not initialized");
@@ -192,7 +193,7 @@ int roveUartAvailable(roveUART_Handle uart) {
   return serial -> available();
 }
 
-roveUart_ERROR roveUartFlushAll(roveUART_Handle uart)
+RoveUart_Error roveUartFlushAll(RoveUart_Handle uart)
 {
   if(uart.initialized == false)
   {
@@ -206,7 +207,7 @@ roveUart_ERROR roveUartFlushAll(roveUART_Handle uart)
   return ROVE_UART_ERROR_SUCCESS;
 }
 
-roveUart_ERROR roveUartSettings(roveUART_Handle uart,unsigned int parityBits, unsigned int stopBits)
+RoveUart_Error roveUartSettings(RoveUart_Handle uart,unsigned int parityBits, unsigned int stopBits)
 {
   if(uart.initialized == false)
   {
@@ -220,7 +221,7 @@ roveUart_ERROR roveUartSettings(roveUART_Handle uart,unsigned int parityBits, un
   return ROVE_UART_ERROR_SUCCESS;
 }
 
-void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length)
+void roveUartSetBufferLength(RoveUart_Handle uart, uint16_t length)
 {
   if(uart.initialized == false)
   {
@@ -232,7 +233,7 @@ void roveUartSetBufferLength(roveUART_Handle uart, uint16_t length)
   serial->setBufferSize(length);
 }
 
-uint16_t roveUartGetBufferLength(roveUART_Handle uart)
+uint16_t roveUartGetBufferLength(RoveUart_Handle uart)
 {
   if(uart.initialized == false)
   {

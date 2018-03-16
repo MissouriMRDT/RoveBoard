@@ -737,7 +737,7 @@ tivaif_receive(struct netif *psNetif)
 {
   tDescriptorList *pDescList;
   tStellarisIF *pIF;
-  struct pbuf *pBuf;
+  static struct pbuf *pBuf = NULL;
   uint32_t ui32DescEnd;
 
   /* Get a pointer to our state data */
@@ -749,10 +749,10 @@ tivaif_receive(struct netif *psNetif)
   /* Start with a NULL pbuf so that we don't try to link chain the first
    * time round.
    */
-  pBuf = NULL;
+  //pBuf = NULL;
 
   /* Determine where we start and end our walk of the descriptor list */
-   ui32DescEnd = pDescList->ui32Read ? (pDescList->ui32Read - 1) : (pDescList->ui32NumDescs - 1);
+  ui32DescEnd = pDescList->ui32Read ? (pDescList->ui32Read - 1) : (pDescList->ui32NumDescs - 1);
 
   /* Step through the descriptors that are marked for CPU attention. */
   while(pDescList->ui32Read != ui32DescEnd)
@@ -792,7 +792,7 @@ tivaif_receive(struct netif *psNetif)
           if(pBuf)
           {
               /* Link this pbuf to the last one we looked at since this buffer
-               * is a continuation of an existing frame (split across mui32tiple
+               * is a continuation of an existing frame (split across multiple
                * pbufs).  Note that we use pbuf_cat() here rather than
                * pbuf_chain() since we don't want to increase the reference
                * count of either pbuf - we only want to link them together.
@@ -819,6 +819,7 @@ tivaif_receive(struct netif *psNetif)
                   pbuf_free(pBuf);
                   LINK_STATS_INC(link.drop);
                   DRIVER_STATS_INC(RXPacketErrCount);
+                  pBuf = NULL;
               }
               else
               {
@@ -836,11 +837,10 @@ tivaif_receive(struct netif *psNetif)
 
 #if NO_SYS
                   if(ethernet_input(pBuf, psNetif) != ERR_OK)
-                  {
 #else
                   if(tcpip_input(pBuf, psNetif) != ERR_OK)
-                  {
 #endif
+                  {
                       /* drop the packet */
                       LWIP_DEBUGF(NETIF_DEBUG, ("tivaif_input: input error\n"));
                       pbuf_free(pBuf);
@@ -850,11 +850,12 @@ tivaif_receive(struct netif *psNetif)
                       LINK_STATS_INC(link.drop);
                       DRIVER_STATS_INC(RXPacketCBErrCount);
                   }
+
+                  /* We're finished with this packet so make sure we don't try
+                   * to link the next buffer to it.
+                   */
+                  pBuf = NULL;
               }
-			  /* We're finished with this packet so make sure we don't try
-			   * to link the next buffer to it.
-			   */
-			  pBuf = NULL;
           }
       }
 
@@ -900,12 +901,6 @@ tivaif_receive(struct netif *psNetif)
           pDescList->ui32Read = 0;
       }
   }
-  if(pBuf != NULL)  {
-	  /* discard buffer of partial multi-frame packet */
-	  /* TODO: so the next packet must be discarded because of the missing head frames */
-	  pbuf_free(pBuf);
-	  pBuf = NULL;
-  }
 }
 
 /**
@@ -923,7 +918,6 @@ tivaif_receive(struct netif *psNetif)
 err_t
 tivaif_init(struct netif *psNetif)
 {
-
   LWIP_ASSERT("psNetif != NULL", (psNetif != NULL));
 
 #if LWIP_NETIF_HOSTNAME
@@ -1091,7 +1085,7 @@ tivaif_interrupt(struct netif *psNetif, uint32_t ui32Status)
   }
 
   /**
-   * Process the receive DMA list and pass all successfui32ly received packets
+   * Process the receive DMA list and pass all successfully received packets
    * up the stack.  We also call this function in cases where the receiver has
    * stalled due to missing buffers since the receive function will attempt to
    * allocate new pbufs for descriptor entries which have none.

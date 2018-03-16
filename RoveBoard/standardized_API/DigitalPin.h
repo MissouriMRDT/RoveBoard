@@ -22,7 +22,7 @@ extern bool digitalPinRead(uint8_t pinNumber);
 //High voltage = 1 in code, low voltage = 0 in code, what those are in volts is hardware dependant.
 //Inputs: number of the pin to read from, as defined in the board's PinMap file.
 //returns: 1 if high voltage, 0 if low voltage
-extern bool digitalPinRead(uint8_t pinNumber, uint8_t inputMode);
+extern bool digitalPinReadMode(uint8_t pinNumber, uint8_t inputMode);
 
 //writes a High voltage (equal to data bit 1) or a Low voltage (equal to data bit 0) on the passed pin.
 //Inputs: number of the pin to read from, as defined in the board's PinMap file. 1 for high output, 0 for low output.
@@ -33,7 +33,7 @@ extern bool digitalPinWrite(uint8_t pinNumber, bool outputLevel);
 //writes a High voltage (equal to data bit 1) or a Low voltage (equal to data bit 0) on the passed pin.
 //Inputs: number of the pin to read from, as defined in the board's PinMap file. 1 for high output, 0 for low output.
 //returns true if successful, false if incorrect arguments are passed.
-extern bool digitalPinWrite(uint8_t pinNumber, bool outputLevel, uint8_t outputMode);
+extern bool digitalPinWriteMode(uint8_t pinNumber, bool outputLevel, uint8_t outputMode);
 
 #define HIGH 1 //for digital pin levels
 #define LOW 0

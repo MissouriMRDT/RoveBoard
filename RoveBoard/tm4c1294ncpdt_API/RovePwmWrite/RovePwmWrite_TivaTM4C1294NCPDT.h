@@ -72,33 +72,33 @@ const int PwmGenerator3 = 3;
 //note: You CAN call this multiple times to set up a module with different pins without issue. To use all 8 pwm write pins,
 //  you'd call this twice for each pwm generator, once for each pin.
 //note: Default settings are: Left aligned wave, 2040 microsecond total period, and output isn't inverted.
-rovePwmWrite_Handle setupPwmWrite(uint8_t writeModule, uint8_t pin);
+RovePwmWrite_Handle setupPwmWrite(uint8_t writeModule, uint8_t pin);
 
 //outputs a pwm wave at the specified duty cycle
 //inputs:
 //  handle: the handle of the pwm instance to write with
 //  duty: duty cycle, between 0 and 255 with 0 being 0% and 255 being 100% duty cycle
-void pwmWriteDuty(rovePwmWrite_Handle handle, uint8_t duty);
+void pwmWriteDuty(RovePwmWrite_Handle handle, uint8_t duty);
 
 //outputs a pwm wave at the specified pulse width
 //inputs:
 //  handle: the handle of the pwm instance to write with
 //  pulseW_us: width of the pwm's On period, in microseconds. 0 for 0% duty cycle, and >= to the pulse total period for 100% duty cycle.
-void pwmWriteWidth(rovePwmWrite_Handle handle, uint32_t pulseW_us);
+void pwmWriteWidth(RovePwmWrite_Handle handle, uint32_t pulseW_us);
 
 //sets the pwm total period for this generator.
 //inputs:
 //  handle: the handle of the pwm instance to write with
 //  pulsePeriod_us: width of the entire pwm wave, in microseconds. Should never exceed 32 bits(3 min or so, quite the long pwm wave)
 //warning: This will affect all the handles that are using the generator this handle uses.
-void setPwmTotalPeriod(rovePwmWrite_Handle handle, uint32_t pulsePeriod_us);
+void setPwmTotalPeriod(RovePwmWrite_Handle handle, uint32_t pulsePeriod_us);
 
 //sets the pwm wave alignment for this generator.
 //inputs:
 //  handle: the handle of the pwm instance to write with
 //  alignment: pwm wave alignment
 //warning: This will affect all the handles that are using the generator this handle uses.
-void setPwmAlignment(rovePwmWrite_Handle handle, pwmAlignment alignment);
+void setPwmAlignment(RovePwmWrite_Handle handle, pwmAlignment alignment);
 
 //sets whether or not the output of this generator is inverted (whether the On period is a high voltage or a low, inverted means latter).
 //inputs:
@@ -106,7 +106,7 @@ void setPwmAlignment(rovePwmWrite_Handle handle, pwmAlignment alignment);
 //  invertOutput: whether or not the invert the pwm wave
 //warning: This will affect all the handles that are using the generator this handle uses.
 //note: if the wave form is left aligned normally, inverting it will actually make it right aligned.
-void setPwmInvert(rovePwmWrite_Handle handle, bool invertOutput);
+void setPwmInvert(RovePwmWrite_Handle handle, bool invertOutput);
 
 #endif /* PWMWRITER_H_ */
 

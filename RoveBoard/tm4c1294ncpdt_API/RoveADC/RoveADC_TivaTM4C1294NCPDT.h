@@ -96,19 +96,19 @@ const uint8_t Adc1_Seq3_0 = 33;
 //returns:  An initialized adc instance
 //Note:     There's no error or anything if you try to have multiple modules use the same pin. It's just kind of pointless most of the time.
 //Warning:  Function will go into an infinite debug fault routine if the module or the pin aren't valid, unless rove debug is disabled.
-roveAdc_Handle roveAdc_init(uint16_t module, uint8_t pin);
+RoveAdc_Handle roveAdc_init(uint16_t module, uint8_t pin);
 
 //Overview: Begins the process of reading an analog voltage with the given adc instance.
 //Inputs:   An initialized adc instance, given from roveAdc_init
 //returns:  ROVEADC_SUCCESS
-roveAdc_Error roveAdc_startConversion(roveAdc_Handle handle);
+RoveAdc_Error roveAdc_startConversion(RoveAdc_Handle handle);
 
 //Overview: Gets the raw data found after a conversion has been completed with the given adc instance.
 //Inputs:   An initialized adc instance, given from roveAdc_init, and a return-by-pointer variable that will contain the conversion data on return.
 //          retBuff values will be between 0 and 4095, representing 0 volts to VIN volts (almost certainly 3.3V)
 //returns:  ROVEADC_SUCCESS if data was successfully gotten, or ROVEADC_INCOMPLETE_CONVERSION if either the conversion is still in progress or
 //          if you never called startConversion before this in the first place.
-roveAdc_Error roveAdc_getConvResults(roveAdc_Handle handle, uint32_t *retBuff);
+RoveAdc_Error roveAdc_getConvResults(RoveAdc_Handle handle, uint32_t *retBuff);
 
 //Converts raw data returned from getConvResults into volts, represented as a float.
 float roveAdc_toVolts(uint32_t result);

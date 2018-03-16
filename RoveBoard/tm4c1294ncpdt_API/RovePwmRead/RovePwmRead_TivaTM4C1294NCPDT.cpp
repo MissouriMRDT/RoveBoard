@@ -660,7 +660,7 @@ static void edgeCaptureGenHandler(timerData * data, uint32_t timerBase)
 }
 //Wrapper for internal initPwmRead, added layer to let the user pass
 //an energia pin map value. Returns false if user input a parameter incorrectly
-rovePwmRead_Handle initPwmRead(uint8_t readingModule, uint8_t mappedPin)
+RovePwmRead_Handle initPwmRead(uint8_t readingModule, uint8_t mappedPin)
 {	
 	if(mappedPin > 95) //only 95 mapped pins
 	{
@@ -695,7 +695,7 @@ rovePwmRead_Handle initPwmRead(uint8_t readingModule, uint8_t mappedPin)
   initData(timerNumber, timerLoad, pinInitialState, portBase, pinMacro);
   initTimer(timerLoad, timerNumber);
 
-	rovePwmRead_Handle handle;
+	RovePwmRead_Handle handle;
 
 	handle.initialized = true;
 	handle.mappedPin = mappedPin;
@@ -705,7 +705,7 @@ rovePwmRead_Handle initPwmRead(uint8_t readingModule, uint8_t mappedPin)
 
 //wrapper for internal stopPwmRead function, added layer to allow 
 //the user to pass an energia pin map value 
-void stopPwmRead(rovePwmRead_Handle handle)
+void stopPwmRead(RovePwmRead_Handle handle)
 {	
   if(handle.initialized == false)
   {
@@ -751,7 +751,7 @@ void stopPwmRead(rovePwmRead_Handle handle)
 
 //wrapper for internal getDuty function, added layer to allow 
 //the user to pass an energia pin map value 
-uint8_t getDuty(rovePwmRead_Handle handle)
+uint8_t getDuty(RovePwmRead_Handle handle)
 {	
   if(handle.initialized == false)
   {
@@ -788,7 +788,7 @@ uint8_t getDuty(rovePwmRead_Handle handle)
 
 //wrapper for internal getTotalPeriod_us function, added layer to allow 
 //the user to pass an energia pin map value 
-uint32_t getTotalPeriod_us(rovePwmRead_Handle handle)
+uint32_t getTotalPeriod(RovePwmRead_Handle handle, RovePwmRead_Scale scale)
 {
   if(handle.initialized == false)
   {
@@ -798,7 +798,7 @@ uint32_t getTotalPeriod_us(rovePwmRead_Handle handle)
   uint8_t mappedPin = handle.mappedPin;
 	char portLetter = pinMapToPort[mappedPin];
 	uint8_t pinNumber = pinMapToPinNum[mappedPin];
-  uint32_t totalPeriod_us;
+  uint32_t totalPeriod;
   uint32_t portBase;
   int16_t portRefNum;
   uint8_t pinMacro;
@@ -827,13 +827,20 @@ uint32_t getTotalPeriod_us(rovePwmRead_Handle handle)
   //tOff + tOn = period in timer clock ticks (assumed to be using system clock). Divided by SysClockFreq = period in seconds. Times 1,000,000 = period in microseconds
   float period_ticks = tOn + tOff;
   float totalPeriods_s = period_ticks /SysClockFreq;
-  totalPeriod_us = (uint32_t) (1000000.0 * totalPeriods_s); 
-  return(totalPeriod_us);
+  if(scale == PWM_NANO)
+  {
+    totalPeriod = (uint32_t) (1000000000.0 * totalPeriods_s);
+  }
+  else if(scale == PWM_MICRO)
+  {
+    totalPeriod = (uint32_t) (1000000.0 * totalPeriods_s);
+  }
+  return(totalPeriod);
 }
 
 //wrapper for internal getOnPeriod_s function, added layer to allow 
 //the user to pass an energia pin map value 
-uint32_t getOnPeriod_us(rovePwmRead_Handle handle)
+uint32_t getOnPeriod(RovePwmRead_Handle handle, RovePwmRead_Scale scale)
 {	
   if(handle.initialized == false)
   {
@@ -846,8 +853,8 @@ uint32_t getOnPeriod_us(rovePwmRead_Handle handle)
   uint32_t portBase;
   int16_t portRefNum;
   uint8_t pinMacro;
-  uint32_t tOn;
-  uint32_t onPeriod_us;
+  double tOn;
+  uint32_t onPeriod;
   timerData * datas [NumberOfTimersUsed] = {&timer0Data, &timer1Data, &timer2Data, &timer3Data, &timer4Data, &timer5Data};
   
   //get the port base for the passed letter
@@ -863,14 +870,22 @@ uint32_t getOnPeriod_us(rovePwmRead_Handle handle)
     if(portBase == dataPortBase && pinMacro == dataPinMacro)
     {
       tOn = datas[i] -> tOn;
+      break;
     }
   }
 
-  float onPeriod_s = (float)tOn / SysClockFreq;
+  double onPeriod_s = tOn / SysClockFreq;
 
   //tOn = on period in timer clock ticks (assumed to be using system clock). Divided by SysClockFreq = period in seconds. Times 1,000,000 = period in microseconds
-  onPeriod_us = (uint32_t)(onPeriod_s * 1000000.0);
-  return(onPeriod_us);
+  if(scale == PWM_MICRO)
+  {
+    onPeriod= (uint32_t)(onPeriod_s * 1000000.0);
+  }
+  else if(scale == PWM_NANO)
+  {
+    onPeriod= (uint32_t)(onPeriod_s * 1000000000.0);
+  }
+  return(onPeriod);
 }
 
 //returns the reference number choresponding to the port letter passed.
@@ -1173,7 +1188,7 @@ static bool moduleUsesCorrectPins(uint8_t timerModule, uint8_t mappedPin)
   return false;
 }
 
-void setPwmReadInterruptPriority(rovePwmRead_Handle handle, uint8_t edgeCapturePriority, uint8_t timeoutCapturePriority)
+void setPwmReadInterruptPriority(RovePwmRead_Handle handle, uint8_t edgeCapturePriority, uint8_t timeoutCapturePriority)
 {
   if(handle.initialized == false)
   {

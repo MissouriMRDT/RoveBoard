@@ -109,7 +109,7 @@ void roveEthernet_NetworkingStart(roveIP myIP)
   GPIOPinTypeEthernetLED(ACTIVITY_LED_BASE, ACTIVITY_LED_PIN);
 }
 
-roveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port)
+RoveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port)
 {
   data._port = port;
 
@@ -130,14 +130,14 @@ roveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port)
   return ROVE_ETHERNET_ERROR_SUCCESS;
 }
 
-roveEthernet_Error roveEthernet_EndUdpSocket()
+RoveEthernet_Error roveEthernet_EndUdpSocket()
 {
   stopUdp();
 
   return ROVE_ETHERNET_ERROR_SUCCESS;
 }
 
-roveEthernet_Error roveEthernet_SendUdpPacket(roveIP destIP, uint16_t destPort, const uint8_t* msg, size_t msgSize)
+RoveEthernet_Error roveEthernet_SendUdpPacket(roveIP destIP, uint16_t destPort, const uint8_t* msg, size_t msgSize)
 {
   beginUdpPacket(destIP, destPort);
   writeUdpPacket(msg, msgSize);
@@ -145,7 +145,7 @@ roveEthernet_Error roveEthernet_SendUdpPacket(roveIP destIP, uint16_t destPort, 
   return ROVE_ETHERNET_ERROR_SUCCESS;
 }
 
-roveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t bufferSize)
+RoveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t bufferSize)
 {
   int packetSize = parseUdpPacket();
   

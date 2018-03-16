@@ -897,10 +897,10 @@ bool validateInput(uint8_t writeModule, uint8_t pin)
   return false;
 }
 
-rovePwmWrite_Handle setupPwmWrite(uint8_t writeModule, uint8_t pin)
+RovePwmWrite_Handle setupPwmWrite(uint8_t writeModule, uint8_t pin)
 {
   uint32_t gpioConfigConst, gen, pulseP_Ticks, PulsePeriod_us;
-  rovePwmWrite_Handle handle;
+  RovePwmWrite_Handle handle;
   PwmModuleData* moduleData = getPwmModule(writeModule);
 
   if(pin > 95)
@@ -954,7 +954,7 @@ rovePwmWrite_Handle setupPwmWrite(uint8_t writeModule, uint8_t pin)
   return handle;
 }
 
-void pwmWriteDuty(rovePwmWrite_Handle handle, uint8_t duty)
+void pwmWriteDuty(RovePwmWrite_Handle handle, uint8_t duty)
 {
   uint32_t pulseW_us;
   uint32_t wavePeriod_us;
@@ -978,7 +978,7 @@ void pwmWriteDuty(rovePwmWrite_Handle handle, uint8_t duty)
   pwmWriteWidth(handle, pulseW_us);
 }
 
-void pwmWriteWidth(rovePwmWrite_Handle handle, uint32_t pulseW_us)
+void pwmWriteWidth(RovePwmWrite_Handle handle, uint32_t pulseW_us)
 {
   uint32_t gpioPortBase, gpioPortPeriph, gpioConfigConst, gen, pwmPin, pwmPinBit, pulseW_Ticks;
   uint8_t pinMask;
@@ -1034,7 +1034,7 @@ void pwmWriteWidth(rovePwmWrite_Handle handle, uint32_t pulseW_us)
   }
 }
 
-void setPwmTotalPeriod(rovePwmWrite_Handle handle, uint32_t pulsePeriod_us)
+void setPwmTotalPeriod(RovePwmWrite_Handle handle, uint32_t pulsePeriod_us)
 {
   uint32_t gen, pulseP_Ticks;
   PwmModuleData * moduleData;
@@ -1055,7 +1055,7 @@ void setPwmTotalPeriod(rovePwmWrite_Handle handle, uint32_t pulsePeriod_us)
   moduleData->pulseTotalPeriod_us = pulsePeriod_us;
 }
 
-void setPwmAlignment(rovePwmWrite_Handle handle, pwmAlignment alignment)
+void setPwmAlignment(RovePwmWrite_Handle handle, pwmAlignment alignment)
 {
   uint32_t gen, alignValue;
   if(handle.initialized == false)
@@ -1070,7 +1070,7 @@ void setPwmAlignment(rovePwmWrite_Handle handle, pwmAlignment alignment)
   PWMGenConfigure(PWMBase, gen, PWM_GEN_MODE_NO_SYNC | alignValue);
 }
 
-void setPwmInvert(rovePwmWrite_Handle handle, bool invertOutput)
+void setPwmInvert(RovePwmWrite_Handle handle, bool invertOutput)
 {
   uint32_t gen, pwmPinBit;
 

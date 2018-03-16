@@ -32,19 +32,19 @@
 void roveEthernet_NetworkingStart(roveIP myIP);
 
 //Start listening for UDP messages on a given port. Must be called before GetUdpMsg can be called.
-roveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port);
+RoveEthernet_Error roveEthernet_UdpSocketListen(uint16_t port);
 
 //Stop listening for UDP messages.
-roveEthernet_Error roveEthernet_EndUdpSocket();
+RoveEthernet_Error roveEthernet_EndUdpSocket();
 
 //Sends a udp message to the destination IP and port
-roveEthernet_Error roveEthernet_SendUdpPacket(roveIP destIP, uint16_t destPort, const uint8_t* msg, size_t msgSize);
+RoveEthernet_Error roveEthernet_SendUdpPacket(roveIP destIP, uint16_t destPort, const uint8_t* msg, size_t msgSize);
 
 //Checks to see if we've received a udp message since the last time this function was called and returns it if we did.
 //Returns-by-pointer the IP of the sending device, and fills up an array that the user must set up themselves
 //with the udp message's bytes, up to the size of the users buffer or less.
 //Returns Success if there was a udp message in our receive buffer.
-roveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t bufferSize);
+RoveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t bufferSize);
 
 //attach a function to be ran automatically whenever a udp packet is received. Only one allowed. Make sure it isn't too long otherwise
 //it could cause a race condition.

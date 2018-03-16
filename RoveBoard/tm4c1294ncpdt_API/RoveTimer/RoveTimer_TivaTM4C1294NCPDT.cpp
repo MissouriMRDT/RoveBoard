@@ -102,7 +102,7 @@ static TimerData timer5Data(Timer5, 0, 0, 0, 0, 0, 0, TIMER5_BASE, SYSCTL_PERIPH
 static TimerData timer6Data(Timer6, 0, 0, 0, 0, 0, 0, TIMER6_BASE, SYSCTL_PERIPH_TIMER6, INT_TIMER6A, INT_TIMER6B, timer6AHandler, timer6BHandler);
 static TimerData timer7Data(Timer7, 0, 0, 0, 0, 0, 0, TIMER7_BASE, SYSCTL_PERIPH_TIMER7, INT_TIMER7A, INT_TIMER7B, timer7AHandler, timer7BHandler);
 
-roveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t timerTimeout_us, void (*interruptFunc)(void))
+RoveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t timerTimeout_us, void (*interruptFunc)(void))
 {
   assertTimerId(timerId);
   assertInterruptId(interruptId);
@@ -143,14 +143,14 @@ roveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t tim
   //enable master system interrupt
   IntMasterEnable();
 
-  roveTimer_Handle handle;
+  RoveTimer_Handle handle;
   handle.index = timerId;
   handle.initialized = true;
 
   return handle;
 }
 
-void startTimer(roveTimer_Handle handle)
+void startTimer(RoveTimer_Handle handle)
 {
   if(handle.initialized == false)
   {
@@ -166,7 +166,7 @@ void startTimer(roveTimer_Handle handle)
   TimerEnable(timerData->timerBase, TIMER_A);
 }
 
-void stopTimer(roveTimer_Handle handle)
+void stopTimer(RoveTimer_Handle handle)
 {
   if(handle.initialized == false)
   {
