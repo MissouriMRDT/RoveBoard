@@ -16,7 +16,7 @@ const uint32_t DefaultCpuFreq = 120000000;
 
 static void (*SysTickCbFuncs[8])(uint32_t timeMs);
 
-static const uint16_t SystickIntPriority = 0x80;
+static const uint16_t SystickIntPriority = 0x20;
 static const uint32_t SystickHz = 1000;
 static const uint32_t SystickMs = 1000 / SystickHz;
 
