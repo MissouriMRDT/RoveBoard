@@ -15,6 +15,7 @@
 #include "../tivaware/inc/hw_ints.h"
 
 const uint32_t F_PIOSC = 16000000; //speed of the internal precision clock is 16Mhz
+static const uint8_t INT_PRIORITY = 0x40;
 
 //table for transforming the interrupt ID over in .h into the configuration setting for the timer.
 //For instance, TimerPeriodicInterrupt wants the timer to be put into periodic mode
@@ -138,6 +139,7 @@ RoveTimer_Handle setupTimer(uint32_t timerId, uint32_t interruptId, uint32_t tim
   //setting up new interrupts in this exact fashion
   TimerIntClear(timerData->timerBase, timerData->timerAInterrupt);
   TimerIntEnable(timerData->timerBase, timerData->timerAInterrupt);
+  IntPrioritySet(timerData->timerAIntEnableId, INT_PRIORITY);
   IntEnable(timerData->timerAIntEnableId);
   
   //enable master system interrupt
