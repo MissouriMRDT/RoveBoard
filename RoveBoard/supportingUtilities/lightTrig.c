@@ -1,5 +1,8 @@
 #include "lightTrig.h"
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 double sinLW(float x)
 {
   float x2 = x*x;
@@ -22,3 +25,7 @@ double cosLW(float x)
   return (long double)(1-(x2)/(2)+(x4)/(4*3*2)-(x6)/(6*5*4*3*2)
          +(x6*x2)/(8*7*6*5*4*3*2)-(x5*x5)/(10*9*8*7*6*5*4*3*2));
 }
+
+#ifdef __cplusplus
+}
+#endif

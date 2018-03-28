@@ -1,7 +1,16 @@
+/*
+ * IPAddressClass.cpp
+ *
+ *  Created on: Mar 4, 2018
+ *      Author: drue
+ */
+
+
+
+#ifdef __cplusplus
+#include <stdint.h>
 #include <String.h>
 #include <supportingUtilities/IPAddress.h>
-
-const IPAddress INADDR_NONE(0,0,0,0);
 
 IPAddress::IPAddress()
 {
@@ -42,4 +51,4 @@ bool IPAddress::operator==(const uint8_t* addr)
 {
     return memcmp(addr, _address, sizeof(_address)) == 0;
 }
-
+#endif

@@ -1,27 +1,32 @@
 #include <supportingUtilities/new.h>
-
+#ifdef __cplusplus
+#ifdef __GNUC__
+#ifndef new
 void * operator new(size_t size)
 {
   return malloc(size);
 }
+#endif
 
+#ifndef delete
 void operator delete(void * ptr)
 {
   free(ptr);
 }
+#endif
 
+#ifndef new
 void * operator new[](size_t size)
 {
   return malloc(size);
 }
+#endif
 
+#ifndef delete
 void operator delete[](void * ptr)
 {
   free(ptr);
 }
-
-int __cxa_guard_acquire(__guard *g) {return !*(char *)(g);};
-void __cxa_guard_release (__guard *g) {*(char *)g = 1;};
-void __cxa_guard_abort (__guard *) {};
-
-void __cxa_pure_virtual(void) {};
+#endif
+#endif
+#endif

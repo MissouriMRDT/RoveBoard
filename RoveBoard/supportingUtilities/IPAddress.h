@@ -29,7 +29,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// A class to make it easier to handle and pass around IP addresses
+#ifndef __cplusplus
+typedef struct
+{
+    uint8_t quartet1;
+    uint8_t quartet2;
+    uint8_t quartet3;
+    uint8_t quartet4;
+} IPAddress;
+const IPAddress INADDR_NONE = {0, 0, 0, 0};
+#else
 
 class IPAddress{
 private:
@@ -66,7 +75,8 @@ public:
 
 inline bool operator != (IPAddress & lhs, const IPAddress & rhs) { return !(lhs == rhs); }
 
-extern const IPAddress INADDR_NONE;
+const IPAddress INADDR_NONE(0, 0, 0, 0);
 
+#endif
 
 #endif
