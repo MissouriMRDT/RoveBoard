@@ -45,8 +45,4 @@ void startTimer(RoveTimer_Handle handle);
 //inputs: handle of the timer to stop
 void stopTimer(RoveTimer_Handle handle);
 
-//attaches a functions for the timer to run everytime it interrupts
-//inputs: handle of the timer to modify, an interrupt function to run
-void attachTimerInterrupt(RoveTimer_Handle handle, void (*interruptFunc)(void) );
-
 #endif
