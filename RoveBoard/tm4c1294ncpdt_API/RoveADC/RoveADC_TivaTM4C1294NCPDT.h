@@ -20,7 +20,7 @@
  *  The library takes advantage of this capability by making it so that when you call the 'start conversion' function for one sequencer and
  *  you immediately ask it to convert again with a different pin, the function will return immediately rather than spending time doing a
  *  conversion again. It will do this for further start conversion calls until a certain amount of time passes; this deadband is capable
- *  of being set by the user, in microseconds.
+ *  of being set by the user, in microseconds. Default is 500 microseconds
  *
  *  There are other features the hardware is capable of, such as setting how long the hardware takes to do its conversion (longer times =
  *  more resistance can be on the adc line with the reading still being fine), being triggered to convert periodically based on a timer or

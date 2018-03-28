@@ -190,7 +190,7 @@ const uint32_t adc_ssfstat[4] = {ADC_O_SSFSTAT0, ADC_O_SSFSTAT1, ADC_O_SSFSTAT2,
 
 #define DEFAULT_ADC_CLK_SPEED 32000000
 #define DEFAULT_ADC_SAMPLE_CYCLES 16 //at 16 nsh, we get about 1 million samples per second and allow up to about 10Kohm of external resistance.
-#define SEQ_DELAY_FACTOR_MICROS 1000 //how many microseconds we want to pass where if the user asks, a sequencer will just return its last reading
+#define SEQ_DELAY_FACTOR_MICROS 500 //how many microseconds we want to pass where if the user asks, a sequencer will just return its last reading
 #define MAX_CHANS 20
 
 #define SEQ0_LEN  8
@@ -703,8 +703,6 @@ bool adcStartConv(seq_conf& config)
   }
 
   ADCIntClear(config.adc, config.sequencer);
-  while((ADCIntStatus(config.adc, config.sequencer, false) > 0)); //let processor clear flag
-
   ADCProcessorTrigger(config.adc, config.sequencer);
 
   SysCtlDelay(100); //processor never starts conversion without it for some reason.
@@ -793,8 +791,12 @@ RoveAdc_Error roveAdc_getConvResults(RoveAdc_Handle handle, uint32_t *retBuff)
   //conversion is fine according to the application. We do this so that the application can take advanatage
   //of the fact that the conversion technically takes the values of several different channels at once to optimize time usage
   uint32_t currentTimestamp = micros();
-  if(abs(currentTimestamp - seq->lastTimestamp) > seqDelayFactor_us || seq->lastTimestamp == 0)
+  if(abs((int64_t)(currentTimestamp - seq->lastTimestamp)) > seqDelayFactor_us || seq->lastTimestamp == 0)
   {
+    if(currentTimestamp - seq->lastTimestamp > 1000) //got hung up, restart it and return previous result.
+    {
+      adcStartConv(*seq);
+    }
     if(adcGetConvResult(*seq) == false)
     {
       return ROVEADC_INCOMPLETE_CONVERSION;
@@ -854,7 +856,6 @@ RoveAdc_Error roveAdc_startConversion(RoveAdc_Handle handle)
   }
 
   adcStartConv(*seq);
-
   return ROVEADC_SUCCESS;
 }
 
