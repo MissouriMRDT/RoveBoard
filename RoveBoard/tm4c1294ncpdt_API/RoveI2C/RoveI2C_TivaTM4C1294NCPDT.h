@@ -34,12 +34,15 @@
  * Warnings:
  * The hardware only supports 7 bit addressing for the slaves, for a maximum of 127 slave devices on one module.
  *
- * If the function returns a timeout error, you'll need to re-initialize the i2c module.
+ * If the function returns a timeout error -- or a busy error with one master on the line --  you'll need to re-init the i2c module.
+ * If the receiving device still won't talk, try toggling the sda and scl pins on and off a few times with digital write
  */
 
 #include <stdint.h>
 #include <stddef.h>
 #include "../../standardized_API/RoveI2C.h"
+
+#define TIMEOUT_MICROS  1000 //change this if you want to change how many microseconds it waits before timing out
 
 #define I2C_Module0 0
 #define I2C_Module1 1

@@ -801,7 +801,7 @@ static RoveI2C_Error transferHandleError(uint32_t i2cBase)
 
     if(!timedOut)
     {
-      timedOut = (micros() - mics > 10000);
+      timedOut = (micros() - mics > TIMEOUT_MICROS);
     }
   }
 
