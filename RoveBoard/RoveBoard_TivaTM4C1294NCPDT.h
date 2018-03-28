@@ -22,6 +22,7 @@ static int dummySoThisRunsBeforeMain = (initSystem(), 0);
 #include "supportingUtilities/RoveUtilities.h"
 #include "supportingUtilities/Debug.h"
 #include "supportingUtilities/lightTrig.h"
+#include "supportingUtilities/MatrixMath.h"
 #include "tm4c1294ncpdt_API/Clocking/Clocking_TivaTM4C1294NCPDT.h"
 #include "tm4c1294ncpdt_API/DigitalPin/DigitalPin_TivaTM4C1294NCPDT.h"
 #include "tm4c1294ncpdt_API/RovePwmRead/RovePwmRead_TivaTM4C1294NCPDT.h"

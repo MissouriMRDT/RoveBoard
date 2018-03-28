@@ -26,5 +26,6 @@ static int dummySoThisRunsBeforeMain = (initSystem(), 0);
 #include "msp432p401r_API/RovePinMap_MSP432P401R.h"
 #include "msp432p401r_API/DigitalPin/DigitalPin_MSP432P401R.h"
 #include "supportingUtilities/lightTrig.h"
+#include "supportingUtilities/MatrixMath.h"
 
 #endif /* ROVEBOARD_ROVEBOARD_MSP432P401R_H_ */

@@ -25,6 +25,7 @@
 #include "supportingUtilities/RoveUtilities.h"
 #include "supportingUtilities/Debug.h"
 #include "supportingUtilities/lightTrig.h"
+#include "supportingUtilities/MatrixMath.h"
 
 
 #endif /* ROVEBOARD_ROVEBOARD_H_ */
