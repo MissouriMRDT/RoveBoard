@@ -3,7 +3,7 @@
 
 #include <string.h> 
 #include <math.h>
-#include "../supportingUtilities/new.h"
+#include "new.h"
 
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
