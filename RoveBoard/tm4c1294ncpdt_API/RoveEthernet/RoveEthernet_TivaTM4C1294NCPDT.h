@@ -10,10 +10,9 @@
  * Description: This library is used to implement UDP networking over the tiva's ethernet port.
  *
  *
- * Warnings: There is an error in lwip where when too many packets are received at once, a memory leak occurs.
- * We encountered this problem in 2017's competition when the arm was getting 10 or so messages every 100 millis. We fixed
- * by just making it so that it gets 2 or 3 every 100 millis. The actual timeslice doesn't seem to matter, it's just how many are delivered
- * at the same time.
+ * Warnings: There is currently an unknown error where when too many packets are received at once, a memory leak occurs.
+ * See 2016's arm commands for an example of how much proved to be too much. Error did not occur on any other system,
+ * as far as could be told, but was proven to be due to internal errors here.
  */
 
 #ifndef ROVEETHERNET_TIVATM4C1294NCPDT_H_
@@ -24,13 +23,10 @@
 #include <stdbool.h>
 
 #include "standardized_API/RoveEthernet.h"
-#include "supportingUtilities/IPAddress.h"
-#include "lwipLibrary/lwip/dns.h"
 
 #define ROVE_IP_ADDR_NONE INADDR_NONE
 #define UDP_RX_MAX_PACKETS 32
 #define UDP_TX_PACKET_MAX_SIZE 2048
-#define CONNECTION_TIMEOUT 1000 * 1 //milliseconds
 
 //Start up the ethernet hardware and assign an IP to this board. Must be called before anything else
 void roveEthernet_NetworkingStart(roveIP myIP);
@@ -65,29 +61,5 @@ RoveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t
 //                      at the bottom of the buffer. GetUdpMsg automatically removes the read packet from the buffer, this will let you choose
 //                      to put it back into the buffer or remove it
 void roveEthernet_attachUdpReceiveCb(bool (*userFunc)(uint8_t* msgBuffer, size_t msgSize));
-/*
-TcpServer roveEthernet_TcpServer_Init(uint16_t port);
-void roveEthernet_TcpServer_SocketListen(TcpServer *server);
-TcpClient roveEthernet_TcpServer_Available(TcpServer *server);
-size_t roveEthernet_TcpServer_Write(TcpServer *server, uint8_t byteToWrite);
-size_t roveEthernet_TcpServer_WriteBuffer(TcpServer *server, uint8_t *buf, size_t size);
 
-TcpClient roveEthernet_TcpClient_Init();
-TcpClient roveEthernet_TcpClient_Init2(client *c);
-uint8_t roveEthernet_TcpClient_Status(TcpClient *client);
-int roveEthernet_TcpClient_Connect(TcpClient *client, IPAddress ip, uint16_t port);
-int roveEthernet_TcpClient_ConnectHost(TcpClient *client, const char* host, uint16_t port);
-int roveEthernet_TcpClient_ConnectTimeout(TcpClient *client, IPAddress ip, uint16_t port, uint64_t timeout);
-int roveEthernet_TcpClient_ConnectHostTimeout(TcpClient *client, const char* host, uint16_t port, uint64_t timeout);
-size_t roveEthernet_TcpClient_Write(TcpClient *client, uint8_t byte);
-size_t roveEthernet_TcpClient_WriteBuffer(TcpClient *client, uint8_t *buf, size_t size);
-int roveEthernet_TcpClient_Available(TcpClient *client);
-int roveEthernet_TcpClient_Read(TcpClient *client);
-int roveEthernet_TcpClient_ReadBuffer(TcpClient *client, uint8_t *buf, size_t size);
-int roveEthernet_TcpClient_Port(TcpClient *client);
-IPAddress roveEthernet_TcpClient_Ip(TcpClient *client);
-int roveEthernet_TcpClient_Peek(TcpClient *client);
-void roveEthernet_TcpClient_Flush(TcpClient *client);
-void roveEthernet_TcpClient_Stop(TcpClient *client);
-uint8_t roveEthernet_TcpClient_Connected(TcpClient *client);*/
 #endif
