@@ -14,7 +14,6 @@
 #include <tm4c1294ncpdt_API/RoveEthernet/lwipLibrary/lwip/inet.h>
 #include <tm4c1294ncpdt_API/RoveEthernet/lwipLibrary/lwip/lwipopts.h>
 #include <tm4c1294ncpdt_API/RoveEthernet/lwipLibrary/lwip/udp.h>
-#include <tm4c1294ncpdt_API/RoveEthernet/lwipLibrary/netif/tivaif.h>
 #include "supportingUtilities/IPAddress.h"
 #include "../tivaware/inc/hw_ints.h"
 #include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
@@ -32,6 +31,11 @@
 #define CLASS_B 0x2
 #define ETHERNET_INT_PRIORITY   0xC0
 #define CLASS_C 0x6
+
+#define INT_PROTECT_INIT(x)    int x = 0
+#define INT_PROTECT(x)         x=IntMasterDisable()
+#define INT_UNPROTECT(x)       do{if(!x)IntMasterEnable();}while(0)
+#define boolean bool
 
 static uint8_t macArray[8];
 static const uint8_t MaxCallbacks = 1;
@@ -84,6 +88,17 @@ static int udpAvailable();
 static void stopUdp();
 static void startEthernetHardware(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet);
 static void readUdpPacket(pbuf *p, uint16_t lengthOfPacket, uint8_t* returnByteBuffer);
+/*static err_t TcpServer_do_poll(void *arg, struct tcp_pcb *cpcb);
+static err_t TcpServer_do_close(void *arg, struct tcp_pcb *cpcb);
+static err_t TcpServer_did_sent(void *arg, struct tcp_pcb *pcb, u16_t len);
+static err_t TcpServer_do_recv(void *arg, struct tcp_pcb *cpcb, struct pbuf *p, err_t err);
+err_t TcpServer_do_accept(void *arg, struct tcp_pcb *cpcb, err_t err);
+static err_t TcpClient_do_connected(void *arg, struct tcp_pcb *pcb, err_t err);
+static err_t TcpClient_do_recv(void *arg, struct tcp_pcb *cpcb, struct pbuf *p, err_t err);
+static err_t TcpClient_do_poll(void *arg, struct tcp_pcb *cpcb);
+static void TcpClient_do_err(void * arg, err_t err);
+static void TcpClient_do_dns(const char *name, struct ip_addr *ipaddr, void *arg);
+static int TcpClient_ReadLocked(TcpClient *client);*/
 
 extern void lwIPEthernetIntHandler(void);
 
@@ -442,3 +457,628 @@ static void stopUdp()
   udp_remove(data._pcb);
   data._pcb = 0;
 }
+
+/*
+TcpServer roveEthernet_TcpServer_Init(uint16_t port)
+{
+  TcpServer server;
+  server._port = port;
+  server.lastConnect = 0;
+  for(int i = 0; i < MAX_CLIENTS; i++)
+  {
+    server.clients[i].port = 0;
+  }
+
+  return server;
+}
+
+void roveEthernet_TcpServer_SocketListen(TcpServer *server)
+{
+  server->spcb = tcp_new();
+  tcp_bind(server->spcb, IP_ADDR_ANY, server->_port);
+  server->spcb = tcp_listen(server->spcb);
+  tcp_arg(server->spcb, (void*)&server);
+  tcp_accept(server->spcb, TcpServer_do_accept);
+}
+
+TcpClient roveEthernet_TcpServer_Available(TcpServer *server)
+{
+  static uint8_t lastClient = 0; //serve the clients in a round-robin fashion
+  uint8_t i;
+  // Find active client
+  for (i = 0; i < 1; i++) {
+    if (++lastClient >= 1)
+      lastClient = 0;
+    if (server->clients[lastClient].port != 0) {
+      //cpcb may change to NULL during interrupt servicing, so avoid the NULL pointer access
+      struct tcp_pcb * cpcb = (tcp_pcb*)server->clients[lastClient].cpcb;
+      if (cpcb)
+      {
+        if(cpcb->state == ESTABLISHED)
+        {
+          return roveEthernet_TcpClient_Init2(&server->clients[lastClient]);
+        }
+      }
+    }
+  }
+  // No client connection active
+  return roveEthernet_TcpClient_Init2(NULL);
+}
+
+err_t TcpServer_do_accept(void *arg, struct tcp_pcb *cpcb, err_t err)
+{
+  //
+  // Get the server object from the argument
+  // to get access to variables and functions
+   //
+
+  TcpServer *server = static_cast<TcpServer*>(arg);
+
+  // Find free client //
+  uint8_t i;
+  for (i = 0; i < 1; i++) {
+    if (server->clients[i].port == 0)
+      break;
+  }
+  if (i >= MAX_CLIENTS) {
+    return ERR_MEM;
+  }
+
+  memset(&server->clients[i], 0, sizeof(client));
+
+  server->clients[i].port = cpcb->remote_port;
+  server->clients[i].cpcb = cpcb;
+
+  tcp_accepted(server->spcb);
+
+  tcp_arg(cpcb, arg);
+  tcp_recv(cpcb, TcpServer_do_recv);
+  tcp_sent(cpcb, TcpServer_did_sent);
+
+  //
+  // Returning ERR_OK indicates to the stack the the
+  // connection has been accepted
+  //
+  return ERR_OK;
+}
+
+size_t roveEthernet_TcpServer_Write(TcpServer *server, uint8_t byteToWrite)
+{
+  return roveEthernet_TcpServer_WriteBuffer(server, &byteToWrite, 1);
+}
+
+size_t roveEthernet_TcpServer_WriteBuffer(TcpServer *server, uint8_t *buf, size_t size)
+{
+  uint8_t i;
+  size_t n = 0;
+  TcpClient client;
+
+  // Find connected clients
+  for (i = 0; i < MAX_CLIENTS; i++) {
+    if (server->clients[i].port != 0 && server->clients[i].cpcb
+        && server->clients[i].cpcb->state == ESTABLISHED) {
+      // cpcb may change to NULL during interrupt servicing, so avoid the NULL pointer access
+      struct tcp_pcb * cpcb = (tcp_pcb*)server->clients[i].cpcb;
+      if (cpcb && cpcb->state == ESTABLISHED) {
+        client = roveEthernet_TcpClient_Init2(&server->clients[i]);
+        n += roveEthernet_TcpClient_WriteBuffer(&client, buf, size);
+      }
+    }
+  }
+
+  return n;
+}
+
+static err_t TcpServer_do_close(void *arg, struct tcp_pcb *cpcb)
+{
+  TcpServer *server = static_cast<TcpServer*>(arg);
+
+  tcp_arg(cpcb, NULL);
+  tcp_recv(cpcb, NULL);
+  tcp_err(cpcb, NULL);
+  tcp_poll(cpcb, NULL, 0);
+  tcp_sent(cpcb, NULL);
+
+  uint8_t i;
+  for (i = 0; i < MAX_CLIENTS; i++) {
+    if (server->clients[i].port == cpcb->remote_port)
+      break;
+  }
+  if (i >= MAX_CLIENTS) {
+    // connection already closed
+    return -1;
+  }
+
+  // --- close the connection ---
+
+  client * cs = &server->clients[i];
+
+  cs->read = 0;
+  cs->port = 0;
+
+  if (cs->p) {
+    if (cs->cpcb)
+      tcp_recved(cpcb, cs->p->tot_len);
+    pbuf_free((pbuf*)cs->p);
+    cs->p = NULL;
+  }
+  if (cs->cpcb) {
+    err_t err = tcp_close(cpcb);
+    if (err != ERR_OK) {
+      //Error closing, try again later in polli (every 2 sec)
+      tcp_poll(cpcb, TcpServer_do_poll, 4);
+    }
+    cs->cpcb = NULL;
+  }
+
+  return ERR_OK;
+}
+
+static err_t TcpServer_do_poll(void *arg, struct tcp_pcb *cpcb)
+{
+  // We only end up here if the connection failed to close
+  // in an earlier call to tcp_close
+  err_t err = tcp_close(cpcb);
+
+  if (err != ERR_OK) {
+    // error closing, try again later in polli (every 2 sec)
+    tcp_poll(cpcb, TcpServer_do_poll, 1);
+  }
+
+  return err;
+}
+
+static err_t TcpServer_did_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
+{
+  return ERR_OK;
+}
+
+static err_t TcpServer_do_recv(void *arg, struct tcp_pcb *cpcb, struct pbuf *p, err_t err)
+{
+  //
+  // Get the server object from the argument
+  // to get access to variables and functions
+  //
+  TcpServer *server = static_cast<TcpServer*>(arg);
+
+  // p==0 for end-of-connection (TCP_FIN packet)
+  if (p == 0) {
+    TcpServer_do_close(arg, cpcb);
+    return ERR_OK;
+  }
+
+  // find the connection
+  uint8_t i;
+  for (i = 0; i < MAX_CLIENTS; i++) {
+    if (server->clients[i].port == cpcb->remote_port)
+      break;
+  }
+  if (i >= MAX_CLIENTS) {
+    // connection already closed - reject the data
+    return ERR_MEM;
+  }
+
+  if (server->clients[i].p != 0)
+    pbuf_cat((pbuf*)server->clients[i].p, p);
+  else
+    server->clients[i].p = p;
+
+  return ERR_OK;
+}
+
+TcpClient roveEthernet_TcpClient_Init()
+{
+  TcpClient client;
+  client._connected = false;
+  client.cs = &client.client_state;
+  client.cs->mode = true;
+  client.cs->cpcb = NULL;
+  client.cs->p = NULL;
+
+  return client;
+}
+
+TcpClient roveEthernet_TcpClient_Init2(client *c)
+{
+  TcpClient client;
+  if (c == NULL) {
+    client._connected = false;
+    client.cs = &client.client_state;
+    client.cs->cpcb = NULL;
+    client.cs->p = NULL;
+    return client;
+  }
+  client._connected = true;
+  client.cs = c;
+  client.cs->mode = false;
+
+  return client;
+}
+
+uint8_t roveEthernet_TcpClient_Status(TcpClient *client)
+{
+  struct tcp_pcb * cpcb = (tcp_pcb*)client->cs->cpcb;
+  if (cpcb == NULL)
+    return CLOSED;
+  return cpcb->state;
+}
+
+int roveEthernet_TcpClient_Connect(TcpClient *client, IPAddress ip, uint16_t port)
+{
+  return roveEthernet_TcpClient_ConnectTimeout(client, ip, port, CONNECTION_TIMEOUT);
+}
+
+int roveEthernet_TcpClient_ConnectHost(TcpClient *client, const char* host, uint16_t port)
+{
+  return roveEthernet_TcpClient_ConnectHostTimeout(client, host, port, CONNECTION_TIMEOUT);
+}
+
+int roveEthernet_TcpClient_ConnectTimeout(TcpClient *client, IPAddress ip, uint16_t port, uint64_t timeout)
+{
+  ip_addr_t dest;
+  dest.addr = ip;
+
+  client->cs->cpcb = tcp_new();
+  client->cs->read = 0;
+  client->cs->p = NULL;
+
+  if (client->cs->cpcb == NULL) {
+    return false;
+  }
+
+  tcp_arg((tcp_pcb*)client->cs->cpcb, client);
+  tcp_recv((tcp_pcb*)client->cs->cpcb, TcpClient_do_recv);
+  tcp_err((tcp_pcb*)client->cs->cpcb, TcpClient_do_err);
+
+  uint8_t val = tcp_connect((tcp_pcb *)client->cs->cpcb, &dest, port, TcpClient_do_connected);
+
+  if (val != ERR_OK) {
+    return false;
+  }
+
+  // Wait for the connection.
+  // Abort if the connection does not succeed within the prescribed timeout
+  unsigned long then = millis();
+
+  while (!client->_connected) {
+    unsigned long now = millis();
+    delay(10);
+    if (now - then > timeout) {
+      tcp_close((tcp_pcb*)client->cs->cpcb);
+      client->cs->cpcb = NULL;
+      return false;
+    }
+  }
+
+  if (client->cs->cpcb->state != ESTABLISHED) {
+    client->_connected = false;
+  }
+
+  // Poll to determine if the peer is still alive
+  tcp_poll((tcp_pcb*)client->cs->cpcb, TcpClient_do_poll, 10);
+  return client->_connected;
+}
+int roveEthernet_TcpClient_ConnectHostTimeout(TcpClient *client, const char* host, uint16_t port, uint64_t timeout)
+{
+  ip_addr_t ip;
+  ip.addr = 0;
+
+  dns_gethostbyname(host, &ip, TcpClient_do_dns, &ip);
+
+  while (!ip.addr) {
+    delay(10);
+  }
+
+  if (ip.addr == IPADDR_NONE)
+    return false;
+
+  return (roveEthernet_TcpClient_ConnectTimeout(client, IPAddress(ip.addr), port, timeout));
+}
+
+size_t roveEthernet_TcpClient_Write(TcpClient *client, uint8_t byte)
+{
+  return roveEthernet_TcpClient_WriteBuffer(client, &byte, 1);
+}
+
+size_t roveEthernet_TcpClient_WriteBuffer(TcpClient *client, uint8_t *buf, size_t size)
+{
+  uint32_t i = 0, inc = 0;
+  bool stuffed_buffer = false;
+
+  struct tcp_pcb * cpcb = (tcp_pcb*)client->cs->cpcb; // cs->cpcb may change to NULL during interrupt servicing
+
+  if (!cpcb)
+    return 0;
+
+  // Attempt to write in 1024-byte increments.
+  while (i < size) {
+    inc = (size - i) < 1024 ? size - i : 1024;
+    err_t err = tcp_write(cpcb, buf + i, inc, TCP_WRITE_FLAG_COPY);
+    if (err != ERR_MEM) {
+      // Keep enqueueing the lwIP buffer until it's full...
+      i += inc;
+      stuffed_buffer = false;
+    } else {
+      if (!stuffed_buffer) {
+        // Buffer full; force output
+        if (client->cs->mode)
+          tcp_output(cpcb);
+        stuffed_buffer = true;
+      } else {
+        delay(1); // else wait a little bit for lwIP to flush its buffers
+      }
+    }
+  }
+  // flush any remaining queue contents
+  if (!stuffed_buffer) {
+    if (client->cs->mode)
+      tcp_output(cpcb);
+  }
+
+  return size;
+}
+
+int roveEthernet_TcpClient_Available(TcpClient *client)
+{
+  struct pbuf * p = (pbuf*)client->cs->p; // cs->p may change to NULL during interrupt servicing
+  if (!p)
+    return 0;
+  return p->tot_len - client->cs->read;
+}
+
+int roveEthernet_TcpClient_Read(TcpClient *client)
+{
+  return TcpClient_ReadLocked(client);
+}
+
+int roveEthernet_TcpClient_ReadBuffer(TcpClient *client, uint8_t *buf, size_t size)
+{
+  uint16_t i;
+  int b;
+
+  if (roveEthernet_TcpClient_Available(client) <= 0)
+    return -1;
+
+  for (i = 0; i < size; i++)
+  {
+    b = roveEthernet_TcpClient_Read(client);
+    if (b == -1)
+      break;
+    buf[i] = b;
+  }
+
+  return i;
+}
+
+int roveEthernet_TcpClient_Port(TcpClient *client)
+{
+  return client->cs->port;
+}
+
+IPAddress roveEthernet_TcpClient_Ip(TcpClient *client)
+{
+  IPAddress addr((uint32_t)(client->cs->cpcb->remote_ip.addr));
+
+  return addr;
+}
+
+int roveEthernet_TcpClient_Peek(TcpClient *client)
+{
+  INT_PROTECT_INIT(oldLevel);
+  uint8_t b;
+
+  // protect code from preemption of the ethernet interrupt servicing
+  INT_PROTECT(oldLevel);
+
+  if (!roveEthernet_TcpClient_Available(client)) {
+    INT_UNPROTECT(oldLevel);
+    return -1;
+  }
+
+  uint8_t *buf = (uint8_t *)client->cs->p->payload;
+  b = buf[client->cs->read];
+
+  INT_UNPROTECT(oldLevel);
+
+  return b;
+}
+
+void roveEthernet_TcpClient_Flush(TcpClient *client)
+{
+  INT_PROTECT_INIT(oldLevel);
+  // protect code from preemption of the ethernet interrupt servicing
+  INT_PROTECT(oldLevel);
+  if (roveEthernet_TcpClient_Available(client)) {
+    client->cs->read = client->cs->p->tot_len;
+    tcp_recved((tcp_pcb*)client->cs->cpcb, 0);
+  }
+  INT_UNPROTECT(oldLevel);
+}
+
+void roveEthernet_TcpClient_Stop(TcpClient *client)
+{
+  // Stop frees any resources including any unread buffers
+  err_t err;
+
+  INT_PROTECT_INIT(oldLevel);
+
+  // protect the code from preemption of the ethernet interrupt servicing
+  INT_PROTECT(oldLevel);
+
+  //struct tcp_pcb * cpcb_copy = (tcp_pcb *) SYNC_FETCH_AND_NULL(&cs->cpcb);
+  //struct pbuf * p_copy = (pbuf *) SYNC_FETCH_AND_NULL(&cs->p); //sync shouldn't be needed, with ints disabled this is all atomic anyway
+
+  struct tcp_pcb * cpcb_copy = (tcp_pcb *)(&client->cs->cpcb);
+  struct pbuf * p_copy = (pbuf *)(&client->cs->p);
+  client->cs->cpcb = NULL;
+  client->cs->p = NULL;
+
+  client->_connected = false;
+  client->cs->port = 0;
+
+  if (cpcb_copy) {
+    tcp_err(cpcb_copy, NULL);
+
+    if (p_copy) {
+      tcp_recved(cpcb_copy, p_copy->tot_len);
+      pbuf_free(p_copy);
+    }
+
+    err = tcp_close(cpcb_copy);
+
+    if (err != ERR_OK) {
+      // Error closing, try again later in poll (every 2 sec)
+      tcp_poll(cpcb_copy, TcpClient_do_poll, 4);
+    }
+  }
+
+  INT_UNPROTECT(oldLevel);
+}
+
+uint8_t roveEthernet_TcpClient_Connected(TcpClient *client)
+{
+  return (roveEthernet_TcpClient_Available(client) || (roveEthernet_TcpClient_Status(client) == ESTABLISHED) || client->_connected);
+}
+
+static err_t TcpClient_do_connected(void *arg, struct tcp_pcb *pcb, err_t err)
+{
+  TcpClient *client = static_cast<TcpClient*>(arg);
+
+  client->_connected = true;
+
+  return err;
+}
+
+static err_t TcpClient_do_recv(void *arg, struct tcp_pcb *cpcb, struct pbuf *p, err_t err)
+{
+  //
+  // Get the client object from the argument
+  // to get access to variables and functions
+  //
+  TcpClient *client = static_cast<TcpClient*>(arg);
+
+  // p==0 for end-of-connection (TCP_FIN packet)
+  if (p == 0) {
+    client->_connected = false;
+    return ERR_OK;
+  }
+
+  if (client->cs->p != 0)
+    pbuf_cat((pbuf*)client->cs->p, p);
+  else
+    client->cs->p = p;
+
+  return ERR_OK;
+}
+
+static err_t TcpClient_do_poll(void *arg, struct tcp_pcb *cpcb)
+{
+  TcpClient *client = static_cast<TcpClient*>(arg);
+
+  if (client->_connected) {
+    if (cpcb->keep_cnt_sent++ > 4) {
+      cpcb->keep_cnt_sent = 0;
+      // Stop polling
+      tcp_poll(cpcb, NULL, 0);
+      tcp_abort(cpcb);
+      if (client->cs->cpcb == cpcb) // cs may be already re-used by another connection
+      {
+        client->cs->port = 0;
+        client->cs->cpcb = 0;
+      }
+      return ERR_ABRT; // calling tcp_abort() must return ERR_ABRT
+    }
+    // Send tcp keep alive probe
+    tcp_keepalive(cpcb);
+    return ERR_OK;
+  }
+
+  // We only end up here if the connection failed to close
+  // in an earlier call to tcp_close
+  err_t err = tcp_close(cpcb);
+
+  if (err != ERR_OK) {
+    // error closing, try again later in poll (every 2 sec)
+    tcp_poll(cpcb, TcpClient_do_poll, 4);
+  }
+
+  if (client->cs->cpcb == cpcb) // cs may be already re-used by another connection
+  {
+    client->cs->cpcb = 0;
+    client->cs->port = 0;
+  }
+
+  return err;
+}
+
+static void TcpClient_do_err(void * arg, err_t err)
+{
+  TcpClient *client = static_cast<TcpClient*>(arg);
+
+  if (client->_connected) {
+    client->_connected = false;
+    return;
+  }
+
+  //
+  // Set connected to true to finish connecting.
+  // ::connect wil take care of figuring out if we are truly connected
+  // by looking at the socket state
+  //
+  client->_connected = true;
+}
+
+static void TcpClient_do_dns(const char *name, struct ip_addr *ipaddr, void *arg)
+{
+  ip_addr_t *result = (ip_addr_t *) arg;
+
+  //BEWARE: lwip stack has been modified to set ipaddr
+  // to IPADDR_NONE if the lookup failed
+  result->addr = ipaddr->addr;
+}
+
+static int TcpClient_ReadLocked(TcpClient *client)
+{
+  if (!roveEthernet_TcpClient_Available(client)) {
+    return -1;
+  }
+
+  else
+  {
+    // protect the code from preemption of the ethernet interrupt servicing
+    IntDisable(INT_EMAC0);
+  }
+
+  uint8_t *buf = (uint8_t *) client->cs->p->payload;
+  uint8_t b = buf[client->cs->read];
+  client->cs->read++;
+
+  // Indicate data was received only if still connected
+  if (client->cs->cpcb) {
+    tcp_recved((tcp_pcb*)client->cs->cpcb, client->cs->read);
+  }
+
+  // Read any data still in the buffer regardless of connection state
+  if ((client->cs->read == client->cs->p->len) && client->cs->p->next) {
+    client->cs->read = 0;
+    struct pbuf * q = (pbuf*)client->cs->p;
+    client->cs->p = client->cs->p->next;
+    // Increase ref count on p->next
+    // 1->3->1->etc
+    pbuf_ref((pbuf*)client->cs->p);
+    // Free p which decreases ref count of the chain
+    // and frees up to p->next in this case
+    // ...->1->1->etc
+    pbuf_free(q);
+  } else if (client->cs->read == client->cs->p->len) {
+    client->cs->read = 0;
+    pbuf_free((pbuf*)client->cs->p);
+    client->cs->p = NULL;
+  }
+
+  IntEnable(INT_EMAC0);
+
+  return b;
+}
+
+*/
