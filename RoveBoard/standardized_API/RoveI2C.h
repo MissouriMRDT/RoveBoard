@@ -4,11 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-typedef struct RoveI2C_Handle
-{
-  uint8_t index;
-} RoveI2C_Handle;
-
 typedef enum RoveI2C_Speed
 {
   //standard i2c speed, max of 100 kbit/s
@@ -24,6 +19,21 @@ typedef enum RoveI2C_Speed
   I2CSPEED_HIGH
 
 } RoveI2C_Speed;
+
+typedef struct RoveI2C_Handle
+{
+  uint8_t index;
+  bool initialized;
+  uint16_t clockPin;
+  uint16_t dataPin;
+  RoveI2C_Speed speed;
+#ifdef __cplusplus
+  RoveI2C_Handle()
+  {
+    initialized = false;
+  }
+#endif
+} RoveI2C_Handle;
 
 typedef enum RoveI2C_Error
 {
@@ -49,7 +59,7 @@ typedef enum RoveI2C_Error
 //       speed: The speed of communication. Acceptable inputs are board specific
 //       clock and data pin: The SCL and SDA pins you want to use, that should match the module.
 //returns: a handle for the now initialized i2c module
-extern RoveI2C_Handle i2cInit(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin);
+extern RoveI2C_Handle roveI2cInit(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin);
 
 //sends a single message to a slave device, without specifying a destination register within the slave
 //input: The handle of the i2c module to use, gained from the init function
