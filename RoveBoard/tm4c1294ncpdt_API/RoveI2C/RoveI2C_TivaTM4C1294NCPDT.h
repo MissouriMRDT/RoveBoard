@@ -34,7 +34,8 @@
  * Warnings:
  * The hardware only supports 7 bit addressing for the slaves, for a maximum of 127 slave devices on one module.
  *
- * If the function returns a timeout error -- or a busy error with one master on the line --  you'll need to re-init the i2c module.
+ * If the function returns a timeout error -- or a busy error with one master on the line -- then the i2c module will reset itself internally
+ *    and pulse the clock pin repeatedly in order to force the i2c line to reset.
  * If the receiving device still won't talk, try toggling the sda and scl pins on and off a few times with digital write
  */
 

@@ -1,6 +1,7 @@
 #include <supportingUtilities/Debug.h>
 #include <tm4c1294ncpdt_API/Clocking/Clocking_TivaTM4C1294NCPDT.h>
 #include <tm4c1294ncpdt_API/RoveI2C/RoveI2C_TivaTM4C1294NCPDT.h>
+#include <tm4c1294ncpdt_API/DigitalPin/DigitalPin_TivaTM4C1294NCPDT.h>
 #include <tm4c1294ncpdt_API/RovePinMap_TivaTM4C1294NCPDT.h>
 #include <tm4c1294ncpdt_API/tivaware/driverlib/gpio.h>
 #include <tm4c1294ncpdt_API/tivaware/driverlib/i2c.h>
@@ -15,6 +16,7 @@ static void masterInitExpClk(uint32_t ui32Base, RoveI2C_Speed speed);
 static void initVerifyInput(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin);
 static RoveI2C_Error transferHandleError(uint32_t i2cBase);
 static RoveI2C_Error transferHandleError(uint32_t i2cBase, uint32_t stopControl);
+static void i2cErrorReset(RoveI2C_Handle handle);
 
 static const uint32_t i2cIndexToI2cBase[] = 
 {
@@ -327,7 +329,7 @@ static const uint32_t pinMapToI2cConfig[] =
   GPIO_PB1_I2C5SDA             // 95 - PB_1       unrouted
 };
 
-RoveI2C_Handle i2cInit(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin)
+RoveI2C_Handle roveI2cInit(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin)
 {
   initVerifyInput(i2cIndex, speed, clockPin, dataPin);
 
@@ -375,14 +377,33 @@ RoveI2C_Handle i2cInit(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, 
   //clear I2C FIFOs
   HWREG(i2cBase + I2C_O_FIFOCTL) = 80008000;
 
+  if(I2CMasterBusBusy(i2cBase) || I2CMasterErr(i2cBase))
+  {
+    for(int i = 0; i < 10; i++)
+    {
+      digitalPinWrite(clockPin, HIGH);
+      delayMicroseconds(5);
+      digitalPinWrite(clockPin, LOW);
+      delayMicroseconds(5);
+    }
+  }
+
   RoveI2C_Handle handle;
   handle.index = i2cIndex;
+  handle.initialized = true;
+  handle.clockPin = clockPin;
+  handle.dataPin = dataPin;
+  handle.speed = speed;
 
   return handle;
 }
 
 RoveI2C_Error roveI2cSend(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t msg)
 {
+  if(!handle.initialized)
+  {
+    debugFault("roveI2cSend: handle not initialized");
+  }
 
   uint32_t i2cBase = i2cIndexToI2cBase[handle.index];
   bool receive = false;
@@ -397,6 +418,7 @@ RoveI2C_Error roveI2cSend(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t msg
   //if another master is using the bus, return that the line is busy
   if(I2CMasterBusBusy(i2cBase))
   {
+    i2cErrorReset(handle);
     return(I2CERROR_BUSY);
   }
 
@@ -421,6 +443,10 @@ RoveI2C_Error roveI2cSendReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t 
 
 RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t msg[], size_t msgSize)
 {
+  if(!handle.initialized)
+  {
+    debugFault("roveI2cSendBurst: handle not initialized");
+  }
 
   uint32_t i2cBase = i2cIndexToI2cBase[handle.index];
   bool receive = false;
@@ -441,6 +467,7 @@ RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_
   //if another master is using the bus, return that the line is busy
   if(I2CMasterBusBusy(i2cBase))
   {
+    i2cErrorReset(handle);
     return(I2CERROR_BUSY);
   }
 
@@ -470,6 +497,7 @@ RoveI2C_Error roveI2cSendBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_
     errorGot = transferHandleError(i2cBase, I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
     if(errorGot != I2CERROR_NONE)
     {
+      i2cErrorReset(handle);
       return errorGot;
     }
   }
@@ -495,6 +523,11 @@ RoveI2C_Error roveI2cSendBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uin
 
 RoveI2C_Error roveI2cReceive(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t* buffer)
 {
+  if(!handle.initialized)
+  {
+    debugFault("roveI2cReceive: handle not initialized");
+  }
+
   uint32_t i2cBase = i2cIndexToI2cBase[handle.index];
   bool receive = true;
   RoveI2C_Error errorGot;
@@ -508,6 +541,7 @@ RoveI2C_Error roveI2cReceive(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t*
   //if another master is using the bus, return that the line is busy
   if(I2CMasterBusBusy(i2cBase))
   {
+    i2cErrorReset(handle);
     return(I2CERROR_BUSY);
   }
 
@@ -526,6 +560,11 @@ RoveI2C_Error roveI2cReceive(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t*
 
 RoveI2C_Error roveI2cReceiveReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t reg, uint8_t* buffer)
 {
+  if(!handle.initialized)
+  {
+    debugFault("roveI2cReceive: handle not initialized");
+  }
+
   uint32_t i2cBase = i2cIndexToI2cBase[handle.index];
 
   bool receive = false;
@@ -538,6 +577,7 @@ RoveI2C_Error roveI2cReceiveReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8
   //if another master is using the bus, return that the line is busy
   if(I2CMasterBusBusy(i2cBase))
   {
+    i2cErrorReset(handle);
     return(I2CERROR_BUSY);
   }
 
@@ -552,6 +592,7 @@ RoveI2C_Error roveI2cReceiveReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8
   errorGot = transferHandleError(i2cBase, I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
   if(errorGot != I2CERROR_NONE)
   {
+    i2cErrorReset(handle);
     return errorGot;
   }
 
@@ -575,6 +616,11 @@ RoveI2C_Error roveI2cReceiveReg(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8
 
 RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uint8_t* buffer, size_t sizeOfReceive)
 {
+  if(!handle.initialized)
+  {
+    debugFault("roveI2cReceiveBurst: handle not initialized");
+  }
+
   uint8_t * receivedData = buffer;
   uint32_t i2cBase = i2cIndexToI2cBase[handle.index];
   bool receive = true;
@@ -595,6 +641,7 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uin
   //if another master is using the bus, return that the line is busy
   if(I2CMasterBusBusy(i2cBase))
   {
+    i2cErrorReset(handle);
     return(I2CERROR_BUSY);
   }
 
@@ -619,6 +666,7 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uin
     errorGot = transferHandleError(i2cBase, I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP);
     if(errorGot != I2CERROR_NONE)
     {
+      i2cErrorReset(handle);
       return errorGot;
     }
     else
@@ -633,6 +681,11 @@ RoveI2C_Error roveI2cReceiveBurst(RoveI2C_Handle handle, uint16_t SlaveAddr, uin
 
 RoveI2C_Error roveI2cReceiveBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr,  uint8_t reg, uint8_t* buffer, size_t sizeOfReceive)
 {
+  if(!handle.initialized)
+  {
+    debugFault("roveI2cReceiveBurst: handle not initialized");
+  }
+
   uint8_t* receivedData = buffer;
   uint32_t i2cBase = i2cIndexToI2cBase[handle.index];
   bool receive = false;
@@ -654,6 +707,7 @@ RoveI2C_Error roveI2cReceiveBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr, 
   //if another master is using the bus, return that the line is busy
   if(I2CMasterBusBusy(i2cBase))
   {
+    i2cErrorReset(handle);
     return(I2CERROR_BUSY);
   }
 
@@ -667,6 +721,7 @@ RoveI2C_Error roveI2cReceiveBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr, 
   errorGot = transferHandleError(i2cBase, I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
   if(errorGot != I2CERROR_NONE)
   {
+    i2cErrorReset(handle);
     return errorGot;
   }
 
@@ -696,6 +751,7 @@ RoveI2C_Error roveI2cReceiveBurstReg(RoveI2C_Handle handle, uint16_t SlaveAddr, 
     errorGot = transferHandleError(i2cBase, I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP);
     if(errorGot != I2CERROR_NONE)
     {
+      i2cErrorReset(handle);
       return errorGot;
     }
     else
@@ -840,4 +896,13 @@ static RoveI2C_Error transferHandleError(uint32_t i2cBase, uint32_t stopControl)
   }
 
   return errorGot;
+}
+
+static void i2cErrorReset(RoveI2C_Handle handle)
+{
+  digitalPinWrite(handle.clockPin, HIGH);
+  digitalPinWrite(handle.clockPin, LOW);
+  digitalPinWrite(handle.clockPin, HIGH);
+  digitalPinWrite(handle.clockPin, LOW);
+  roveI2cInit(handle.index, handle.speed, handle.clockPin, handle.dataPin);
 }
