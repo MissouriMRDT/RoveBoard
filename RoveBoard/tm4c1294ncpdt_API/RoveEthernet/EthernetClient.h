@@ -1,17 +1,14 @@
-#ifndef ethernetclient_h
-#define ethernetclient_h
+#ifndef tm4c_ethernetclient_h
+#define tm4c_ethernetclient_h
 
 #include "supportingUtilities/IPAddress.h"
 #include "EthernetServer.h"
-#include "lwipLibrary/lwip/dns.h"
-
-/* Set connection timeout to 1 sec */
-#define CONNECTION_TIMEOUT 1000 * 1
+#include "EthernetClientInternal.h"
 
 class EthernetClient{
 public:
 	EthernetClient();
-	EthernetClient(struct client *c);
+	EthernetClient(struct EthernetClientInternal *c);
 
 	uint8_t status();
 	virtual int connect(IPAddress ip, uint16_t port);
@@ -38,9 +35,9 @@ public:
 	friend class EthernetServer;
 
 private:
-	struct client client_state;
+	struct EthernetClientInternal client_state;
 	volatile bool _connected;
-	struct client *cs;
+	struct EthernetClientInternal *cs;
 
 	int readLocked();
 };

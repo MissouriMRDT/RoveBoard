@@ -23,10 +23,12 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "standardized_API/RoveEthernet.h"
 #include "supportingUtilities/IPAddress.h"
 #include "lwipLibrary/lwip/dns.h"
-
+#include "EthernetClient.h"
+#include "EthernetServer.h"
+#include "standardized_API/RoveEthernet.h"
+#include "StructDefines.h"
 #define ROVE_IP_ADDR_NONE INADDR_NONE
 #define UDP_RX_MAX_PACKETS 32
 #define UDP_TX_PACKET_MAX_SIZE 2048
@@ -65,15 +67,14 @@ RoveEthernet_Error roveEthernet_GetUdpMsg(roveIP* senderIP, void* buffer, size_t
 //                      at the bottom of the buffer. GetUdpMsg automatically removes the read packet from the buffer, this will let you choose
 //                      to put it back into the buffer or remove it
 void roveEthernet_attachUdpReceiveCb(bool (*userFunc)(uint8_t* msgBuffer, size_t msgSize));
-/*
-TcpServer roveEthernet_TcpServer_Init(uint16_t port);
-void roveEthernet_TcpServer_SocketListen(TcpServer *server);
+
+TcpServer roveEthernet_TcpServer_Init();
+void roveEthernet_TcpServer_SocketListen(TcpServer *server, uint16_t port);
 TcpClient roveEthernet_TcpServer_Available(TcpServer *server);
 size_t roveEthernet_TcpServer_Write(TcpServer *server, uint8_t byteToWrite);
 size_t roveEthernet_TcpServer_WriteBuffer(TcpServer *server, uint8_t *buf, size_t size);
 
 TcpClient roveEthernet_TcpClient_Init();
-TcpClient roveEthernet_TcpClient_Init2(client *c);
 uint8_t roveEthernet_TcpClient_Status(TcpClient *client);
 int roveEthernet_TcpClient_Connect(TcpClient *client, IPAddress ip, uint16_t port);
 int roveEthernet_TcpClient_ConnectHost(TcpClient *client, const char* host, uint16_t port);
@@ -89,5 +90,5 @@ IPAddress roveEthernet_TcpClient_Ip(TcpClient *client);
 int roveEthernet_TcpClient_Peek(TcpClient *client);
 void roveEthernet_TcpClient_Flush(TcpClient *client);
 void roveEthernet_TcpClient_Stop(TcpClient *client);
-uint8_t roveEthernet_TcpClient_Connected(TcpClient *client);*/
+uint8_t roveEthernet_TcpClient_Connected(TcpClient *client);
 #endif

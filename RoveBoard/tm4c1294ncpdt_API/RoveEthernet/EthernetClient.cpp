@@ -5,6 +5,8 @@
 #include "../Clocking/Clocking_TivaTM4C1294NCPDT.h"
 #include "lwipLibrary/lwip/tcp.h"
 #include "lwipLibrary/lwip/tcp_impl.h"
+#include "lwipLibrary/lwip/dns.h"
+#include "RoveEthernet_TivaTM4C1294NCPDT.h"
 
 /* directives for disabling and enabling interrupts */
 #define INT_PROTECT_INIT(x)    int x = 0
@@ -23,7 +25,7 @@ EthernetClient::EthernetClient() {
 	cs->p = NULL;
 }
 
-EthernetClient::EthernetClient(struct client *c) {
+EthernetClient::EthernetClient(struct EthernetClientInternal *c) {
 	if (c == NULL) {
 		_connected = false;
 		cs = &client_state;

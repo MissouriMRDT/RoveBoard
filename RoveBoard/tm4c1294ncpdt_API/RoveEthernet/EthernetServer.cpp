@@ -6,8 +6,7 @@
 /* SYNC_FETCH_AND_NULL: atomic{ tmp=*x; *x=NULL; return tmp; } */
 #define SYNC_FETCH_AND_NULL(x)   (__sync_fetch_and_and(x, NULL))
 
-EthernetServer::EthernetServer(uint16_t port) {
-	_port = port;
+EthernetServer::EthernetServer() {
 	lastConnect = 0;
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -22,7 +21,7 @@ err_t EthernetServer::do_poll(void *arg, struct tcp_pcb *cpcb) {
 	err_t err = tcp_close(cpcb);
 
 	if (err != ERR_OK) {
-		/* error closing, try again later in polli (every 2 sec) */
+		/* error closing, try again later in polli (every half a sec) */
 		tcp_poll(cpcb, do_poll, 1);
 	}
 
@@ -54,7 +53,7 @@ void EthernetServer::do_close(void *arg, struct tcp_pcb *cpcb) {
 
 	/* --- close the connection --- */
 
-	struct client * cs = &server->clients[i];
+	struct EthernetClientInternal * cs = &server->clients[i];
 
 	cs->read = 0;
 	cs->port = 0;
@@ -133,7 +132,7 @@ err_t EthernetServer::do_accept(void *arg, struct tcp_pcb *cpcb, err_t err) {
 		return ERR_MEM;
 	}
 
-	memset(&server->clients[i], 0, sizeof(struct client));
+	memset(&server->clients[i], 0, sizeof(struct EthernetClientInternal));
 
 	server->clients[i].port = cpcb->remote_port;
 	server->clients[i].cpcb = cpcb;
@@ -151,7 +150,8 @@ err_t EthernetServer::do_accept(void *arg, struct tcp_pcb *cpcb, err_t err) {
 	return ERR_OK;
 }
 
-void EthernetServer::begin() {
+void EthernetServer::begin(uint16_t port) {
+  _port = port;
 	spcb = tcp_new();
 	tcp_bind(spcb, IP_ADDR_ANY, _port);
 	spcb = tcp_listen(spcb);
