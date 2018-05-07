@@ -62,7 +62,7 @@
 //       clock and data pin: The SCL and SDA pins you want to use. Make sure they match up with the module
 //returns: a handle for the now initialized i2c module
 //warning: if the arguments are invalid, the function enters an infinite loop fault routine for checking in a debugger
-RoveI2C_Handle i2cInit(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin);
+RoveI2C_Handle roveI2cInit(uint8_t i2cIndex, RoveI2C_Speed speed, uint8_t clockPin, uint8_t dataPin);
 
 //sends a single message to a slave device, without specifying a destination register within the slave
 //input: The handle of the i2c module to use, gained from the init function
