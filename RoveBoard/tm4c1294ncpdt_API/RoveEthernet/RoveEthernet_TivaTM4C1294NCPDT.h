@@ -22,13 +22,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "../../StructDefines.h"
 
 #include "supportingUtilities/IPAddress.h"
 #include "lwipLibrary/lwip/dns.h"
 #include "EthernetClient.h"
 #include "EthernetServer.h"
 #include "standardized_API/RoveEthernet.h"
-#include "StructDefines.h"
 #define ROVE_IP_ADDR_NONE INADDR_NONE
 #define UDP_RX_MAX_PACKETS 32
 #define UDP_TX_PACKET_MAX_SIZE 2048
