@@ -98,4 +98,11 @@ uint32_t getOnPeriod(RovePwmRead_Handle handle, RovePwmRead_Scale scale);
 //Note: initPwmRead must be called before hand
 void setPwmReadInterruptPriority(RovePwmRead_Handle handle, uint8_t edgeCapturePriority, uint8_t timeoutCapturePriority);
 
+//Sets how many microseconds it takes for the disconnect check timer to trigger. The quicker it is the quicker it'll be to
+//detect disconnects, but it must never be shorter than the pwm signal's period
+//input: The handle of th pwm reading instance to modify
+//       The microseconds of the timeout. Max is 1 second.
+//warning: it must never be shorter than the pwm signal's period
+void setDisconnectCheckTimeout(RovePwmRead_Handle handle, uint32_t timeout_us);
+
 #endif
