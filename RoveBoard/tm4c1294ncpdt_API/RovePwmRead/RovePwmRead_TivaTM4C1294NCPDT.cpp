@@ -426,7 +426,7 @@ static volatile uint8_t timeoutCounter = 0;
 static void timeout0Handler()
 {
   TimerIntClear(TIMER0_BASE, TIMER_TIMB_TIMEOUT); // clear the timer interrupt
-  timeoutGenHandler(&timer1Data);
+  timeoutGenHandler(&timer0Data);
 }
 
 //interrupt handelr for timer 0's edge capture event.
@@ -1259,4 +1259,71 @@ void setPwmReadInterruptPriority(RovePwmRead_Handle handle, uint8_t edgeCaptureP
   IntPrioritySet(enableTimerIntAVal, (edgeCapturePriority << 5)); //priority is last 3 bits of 8 bit register
   IntPrioritySet(enableTimerIntBVal, (timeoutCapturePriority << 5));
   IntEnable(enableTimerIntAVal| enableTimerIntBVal);
+}
+
+void setDisconnectCheckTimeout(RovePwmRead_Handle handle, uint32_t timeout_us)
+{
+  if(handle.initialized == false)
+  {
+    debugFault("setDisconnectCheckTimeout: pwmRead handle not initialized (did you call the init function?)");
+  }
+
+  uint8_t mappedPin;
+  uint8_t portRefNum;
+  char gpioPort;
+  uint8_t pinNumber;
+  uint8_t timerNum;
+  uint32_t timerBase;
+  uint8_t enableTimerIntAVal;
+  uint8_t enableTimerIntBVal;
+  uint32_t timerLoad;
+  mappedPin = handle.mappedPin;
+
+  gpioPort = pinMapToPort[mappedPin];
+  if(gpioPort == 0) //0 is error value for this table
+  {
+    return;
+  }
+
+  pinNumber = pinMapToPinNum[mappedPin];
+  if(pinNumber == 255)
+  {
+    return; //255 is error value for this table
+  }
+
+  portRefNum = getPortRefNum(gpioPort);
+  timerNum = pinToTimerNumberTable[portRefNum][pinNumber];
+
+  switch(timerNum)
+  {
+    case 0:
+      timerBase = TIMER0_BASE;
+      break;
+
+    case 1:
+      timerBase = TIMER1_BASE;
+      break;
+
+    case 2:
+      timerBase = TIMER2_BASE;
+      break;
+
+    case 3:
+      timerBase = TIMER3_BASE;
+      break;
+
+    case 4:
+      timerBase = TIMER4_BASE;
+      break;
+
+    case 5:
+      timerBase = TIMER5_BASE;
+      break;
+  }
+
+  timerLoad = ((float)(timeout_us) * (float)(SysClockFreq)) / 1000000.0;
+  TimerLoadSet(timerBase, TIMER_B, (timerLoad & 0xFFFF)); //load register only holds first 16 bits
+  TimerPrescaleSet(timerBase, TIMER_B, (uint8_t)(timerLoad >> 16)); //prescale takes the last 8 bits
+
+  return;
 }
