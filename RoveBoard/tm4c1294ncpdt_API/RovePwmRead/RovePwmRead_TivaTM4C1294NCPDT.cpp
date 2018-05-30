@@ -426,7 +426,7 @@ static volatile uint8_t timeoutCounter = 0;
 static void timeout0Handler()
 {
   TimerIntClear(TIMER0_BASE, TIMER_TIMB_TIMEOUT); // clear the timer interrupt
-  timeoutGenHandler(&timer1Data);
+  timeoutGenHandler(&timer0Data);
 }
 
 //interrupt handelr for timer 0's edge capture event.
