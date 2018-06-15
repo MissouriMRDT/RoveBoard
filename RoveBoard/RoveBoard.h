@@ -22,6 +22,7 @@
 #include "standardized_API/RoveUart.h"
 #include "standardized_API/RovePermaMem.h"
 #include "standardized_API/RoveADC.h"
+#include "standardized_API/RoveWatchdog.h"
 #include "supportingUtilities/RoveUtilities.h"
 #include "supportingUtilities/Debug.h"
 #include "supportingUtilities/lightTrig.h"

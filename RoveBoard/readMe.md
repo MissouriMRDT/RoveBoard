@@ -27,7 +27,7 @@ Be sure to read the wiki for more helpful things such as visual pinmaps.
   - lastly you'll see folders devoted to a specific processor like 'tm4c1294ncpdt_API'. Those folders contain the files that list and define the functions made for their processor, and what most users of RoveBoard will be interested in looking at.
 
 ## Supported microcontrollers and what features they implement
-* Tiva tm4c1294ncpdt - pwm writing, pwm reading, clocking, digital pin, Ethernet, Uart/serial, timerInterface, I2c, PermanentMemory(EEPROM version), ADC
+* Tiva tm4c1294ncpdt - pwm writing, pwm reading, clocking, digital pin, Ethernet, Uart/serial, timerInterface, I2c, PermanentMemory(EEPROM version), ADC, Watchdog
 * Msp432P4O1R - clocking, digital pin, Uart/serial, and nonstandard Power API.
 
 

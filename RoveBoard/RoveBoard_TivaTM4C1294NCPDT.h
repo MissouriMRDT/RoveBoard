@@ -34,5 +34,6 @@ static int dummySoThisRunsBeforeMain = (initSystem(), 0);
 #include "tm4c1294ncpdt_API/RoveI2C/RoveI2C_TivaTM4C1294NCPDT.h"
 #include "tm4c1294ncpdt_API/RovePermaMem/RovePermaMem_TivaTM4C1294NCPDT.h"
 #include "tm4c1294ncpdt_API/RoveADC/RoveADC_TivaTM4C1294NCPDT.h"
+#include "tm4c1294ncpdt_API/RoveWatchdog/RoveWatchdog_TivaTM4C1294NCPDT.h"
 
 #endif
